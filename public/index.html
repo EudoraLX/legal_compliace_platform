@@ -298,6 +298,273 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
+        
+        .contract-editor textarea {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.4;
+            resize: vertical;
+        }
+        
+        .modification-details {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .modification-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #007bff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .modification-item h6 {
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        
+        .modification-item .badge {
+            font-size: 0.8rem;
+        }
+        
+        .text-diff {
+            background: #fff3cd;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 5px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        
+        /* AI修改建议样式 */
+        .ai-modification-container {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+        }
+        
+        .ai-modification-details {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .ai-modification-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            border-left: 4px solid #007bff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .ai-modification-item h6 {
+            color: #007bff;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .text-comparison {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #dee2e6;
+        }
+        
+        .text-original {
+            background: #ffe6e6;
+            border-left: 3px solid #dc3545;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        
+        .text-suggested {
+            background: #e6ffe6;
+            border-left: 3px solid #28a745;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        
+        .text-reason {
+            background: #e6f3ff;
+            border-left: 3px solid #17a2b8;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .modification-type-badge {
+            font-size: 0.9rem;
+            padding: 6px 12px;
+            border-radius: 20px;
+        }
+        
+        /* 历史详情弹框样式 */
+        .modal-xl {
+            max-width: 90%;
+        }
+        
+        .contract-preview textarea {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            resize: none;
+        }
+        
+        .modal-body .card {
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+        
+        .modal-body .card-header {
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+        }
+        
+        .modal-body .display-4 {
+            font-size: 3rem;
+            font-weight: bold;
+        }
+        
+        .modal-body .alert {
+            border: none;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .modal-body .alert:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* 高亮文本样式 */
+        .highlighted-text {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            min-height: 300px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
+        
+        .highlighted-text.original-text {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .highlighted-text.modified-text {
+            border-left: 4px solid #28a745;
+        }
+        
+        .highlight-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 2px 4px;
+            margin: 1px 0;
+            display: inline-block;
+            font-weight: bold;
+        }
+        
+        .highlight-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 4px;
+            padding: 2px 4px;
+            margin: 1px 0;
+            display: inline-block;
+            font-weight: bold;
+        }
+        
+        .highlight-danger {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 4px;
+            padding: 2px 4px;
+            margin: 1px 0;
+            display: inline-block;
+            font-weight: bold;
+        }
+        
+        .highlight-info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 4px;
+            padding: 2px 4px;
+            margin: 1px 0;
+            display: inline-block;
+            font-weight: bold;
+        }
+        
+        /* 切换按钮样式 */
+        .toggle-text-btn {
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        
+        /* 差异对比样式 */
+        .diff-container {
+            position: relative;
+        }
+        
+        .diff-line {
+            padding: 2px 0;
+            border-radius: 3px;
+        }
+        
+        .diff-line.added {
+            background-color: #d4edda;
+            border-left: 3px solid #28a745;
+        }
+        
+        .diff-line.removed {
+            background-color: #f8d7da;
+            border-left: 3px solid #dc3545;
+        }
+        
+        .diff-line.modified {
+            background-color: #fff3cd;
+            border-left: 3px solid #ffc107;
+        }
+        
+        .diff-marker {
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .diff-marker.added::before {
+            content: "+";
+            color: #28a745;
+        }
+        
+        .diff-marker.removed::before {
+            content: "-";
+            color: #dc3545;
+        }
+        
+        .diff-marker.modified::before {
+            content: "~";
+            color: #ffc107;
+        }
     </style>
 </head>
 <body>
@@ -305,7 +572,7 @@
         <!-- 头部 -->
         <div class="header">
             <h1><i class="fas fa-balance-scale"></i> 法律合同合规AI分析平台</h1>
-            <p>基于《中华人民共和国对外贸易法》的智能合规分析 - 一体化界面</p>
+            <p>基于中国法律法规的智能合规分析 - 一体化界面</p>
         </div>
 
         <!-- 浮动统计面板 -->
@@ -429,23 +696,39 @@
                     </div>
                 </div>
 
-                <!-- 合同修改区域 -->
+                <!-- AI修改建议区域 -->
                 <div class="content-section">
                     <h3 class="section-header">
-                        <i class="fas fa-edit"></i> 合同修改建议
+                        <i class="fas fa-robot"></i> AI合同优化
                     </h3>
                     <div class="content-body">
-                        <div class="contract-editor">
-                            <div class="mb-3">
-                                <label for="contractText" class="form-label">合同内容（可编辑）</label>
-                                <textarea id="contractText" class="form-control" placeholder="合同内容将在这里显示..."></textarea>
+                        <div class="ai-modification-container">
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle"></i> 
+                                <strong>智能优化：</strong>AI将直接优化原合同，生成一份更加合规、完整的合同协议，并高亮显示优化的地方和对应的法律条文。
                             </div>
-                            <div class="text-center">
-                                <button class="btn btn-custom" onclick="applyModifications()">
-                                    <i class="fas fa-magic"></i> 应用AI修改建议
+                            <div class="mb-3">
+                                <label for="originalContractText" class="form-label text-success">
+                                    <i class="fas fa-robot"></i> AI优化后的合同内容
+                                </label>
+                                <textarea id="originalContractText" class="form-control" rows="20" readonly 
+                                          placeholder="AI优化后的合同内容将在这里显示，优化的地方会被高亮显示..."></textarea>
+                            </div>
+                            
+                            <!-- AI修改详情 -->
+                            <div class="ai-modification-details mt-4" id="aiModificationDetails" style="display: none;">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-gavel"></i> 优化详情与法律依据
+                                </h5>
+                                <div id="aiModificationList"></div>
+                            </div>
+                            
+                            <div class="text-center mt-3">
+                                <button class="btn btn-success me-2" onclick="applyAIModifications(event)" id="applyAIBtn" style="display: none;">
+                                    <i class="fas fa-check"></i> 确认优化
                                 </button>
-                                <button class="btn btn-outline-success ms-2" onclick="downloadModifiedContract()">
-                                    <i class="fas fa-download"></i> 下载修改后合同
+                                <button class="btn btn-outline-primary" onclick="downloadAIModifiedContract()" id="downloadAIBtn" style="display: none;">
+                                    <i class="fas fa-download"></i> 下载优化后文件
                                 </button>
                             </div>
                         </div>
@@ -454,27 +737,66 @@
 
                 <!-- 操作按钮 -->
                 <div class="text-center mt-4 mb-4">
-                    <button class="btn btn-custom" onclick="resetAnalysis()">
+                    <button class="btn btn-custom me-2" onclick="resetAnalysis()">
                         <i class="fas fa-redo"></i> 重新分析
                     </button>
-                    <button class="btn btn-outline-secondary ms-2" onclick="exportReport()">
+                    <button class="btn btn-outline-secondary me-2" onclick="exportReport()">
                         <i class="fas fa-download"></i> 导出报告
                     </button>
-                    <button class="btn btn-outline-info ms-2" onclick="toggleStats()">
+                    <button class="btn btn-outline-info me-2" onclick="toggleStats()">
                         <i class="fas fa-chart-bar"></i> 显示统计
+                    </button>
+                    <button class="btn btn-outline-primary" onclick="backToUpload()">
+                        <i class="fas fa-arrow-left"></i> 返回上传
                     </button>
                 </div>
             </div>
 
-            <!-- 历史记录区域 -->
+                        <!-- 历史记录区域 -->
             <div class="content-section">
-                <h3 class="section-header">
-                    <i class="fas fa-history"></i> 分析历史
-                </h3>
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="section-header mb-0">
+                        <i class="fas fa-history"></i> 分析历史
+                    </h3>
+                </div>
                 <div class="content-body">
                     <div id="historyList">
                         <!-- 历史记录将在这里显示 -->
                     </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 消息提示区域 -->
+    <div id="messageContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 9999; display: none;">
+        <div class="toast align-items-center text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body" id="messageText"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 历史详情弹框 -->
+    <div class="modal fade" id="historyDetailModal" tabindex="-1" aria-labelledby="historyDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="historyDetailModalLabel">
+                        <i class="fas fa-file-alt"></i> 分析详情
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="historyDetailContent">
+                        <!-- 历史详情内容将在这里显示 -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" onclick="viewFullAnalysis()">查看完整分析</button>
                 </div>
             </div>
         </div>

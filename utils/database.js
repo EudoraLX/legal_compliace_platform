@@ -4,6 +4,15 @@ let db;
 
 async function initDatabase() {
   try {
+    // 如果已经有连接，先关闭
+    if (db) {
+      try {
+        await db.end();
+      } catch (error) {
+        console.log('关闭旧连接时出错:', error);
+      }
+    }
+    
     db = await mysql.createConnection({
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'root',
@@ -32,8 +41,30 @@ async function initDatabase() {
   }
 }
 
+// 获取数据库连接
+function getDb() {
+  return db;
+}
+
+// 检查数据库连接状态
+async function checkDbConnection() {
+  if (!db) {
+    console.log('数据库未连接，尝试重新连接...');
+    await initDatabase();
+  } else {
+    // 测试连接是否仍然有效
+    try {
+      await db.execute('SELECT 1');
+    } catch (error) {
+      console.log('数据库连接已断开，尝试重新连接...');
+      await initDatabase();
+    }
+  }
+  return db !== null;
+}
+
 async function saveContract(contractData) {
-  if (!db) return null;
+  if (!await checkDbConnection()) return null;
   
   try {
     await db.execute(
@@ -55,7 +86,7 @@ async function saveContract(contractData) {
 }
 
 async function getContractHistory() {
-  if (!db) return [];
+  if (!await checkDbConnection()) return [];
   
   try {
     const [rows] = await db.execute(
@@ -69,28 +100,71 @@ async function getContractHistory() {
 }
 
 async function getContractById(id) {
-  if (!db) return null;
-  
   try {
+    console.log('getContractById: 开始查询，ID:', id);
+    
+    if (!await checkDbConnection()) {
+      console.log('getContractById: 数据库未连接');
+      return null;
+    }
+    
+    console.log('getContractById: 数据库连接正常，执行查询...');
     const [rows] = await db.execute(
       'SELECT * FROM contracts WHERE id = ?',
       [id]
     );
     
-    if (rows.length === 0) return null;
+    console.log('getContractById: 查询结果行数:', rows.length);
+    
+    if (rows.length === 0) {
+      console.log('getContractById: 未找到记录，ID:', id);
+      return null;
+    }
     
     const contract = rows[0];
-    contract.analysis_result = JSON.parse(contract.analysis_result);
+    console.log('getContractById: 找到合同，字段:', Object.keys(contract));
+    console.log('getContractById: analysis_result类型:', typeof contract.analysis_result);
+    console.log('getContractById: analysis_result值:', contract.analysis_result ? '存在' : 'null/undefined');
+    
+    if (contract.analysis_result) {
+      // MySQL的JSON字段已经自动解析为对象，不需要再次解析
+      console.log('getContractById: analysis_result字段已存在，类型:', typeof contract.analysis_result);
+      
+      // 如果analysis_result是字符串，则尝试解析
+      if (typeof contract.analysis_result === 'string') {
+        try {
+          contract.analysis_result = JSON.parse(contract.analysis_result);
+          console.log('getContractById: JSON字符串解析成功');
+        } catch (parseError) {
+          console.error('getContractById: JSON字符串解析失败:', parseError);
+          return null;
+        }
+      }
+      
+      // 验证analysis_result的结构
+      if (typeof contract.analysis_result === 'object' && contract.analysis_result !== null) {
+        console.log('getContractById: analysis_result结构验证通过');
+        console.log('getContractById: 包含的键:', Object.keys(contract.analysis_result));
+      } else {
+        console.log('getContractById: analysis_result结构无效');
+        return null;
+      }
+    } else {
+      console.log('getContractById: analysis_result字段为空');
+      return null;
+    }
+    
+    console.log('getContractById: 成功返回合同数据');
     return contract;
   } catch (error) {
-    console.error('获取合同详情失败:', error);
+    console.error('getContractById: 获取合同详情失败:', error);
     return null;
   }
 }
 
 // 获取统计数据
 async function getStatistics() {
-  if (!db) return null;
+  if (!await checkDbConnection()) return null;
   
   try {
     // 总分析数量
@@ -144,7 +218,7 @@ async function getStatistics() {
 
 // 删除分析记录
 async function deleteContract(id) {
-  if (!db) return false;
+  if (!await checkDbConnection()) return false;
   
   try {
     await db.execute('DELETE FROM contracts WHERE id = ?', [id]);
@@ -162,5 +236,6 @@ module.exports = {
   getContractById,
   getStatistics,
   deleteContract,
-  getDb: () => db
+  getDb,
+  checkDbConnection
 }; 
