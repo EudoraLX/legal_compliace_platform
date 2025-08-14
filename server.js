@@ -218,7 +218,7 @@ app.post('/api/modify-contract', async (req, res) => {
   }
 });
 
-// AI智能修改建议（新功能）
+// AI智能修改建议（已整合到合规分析中）
 app.post('/api/ai-modify-contract', async (req, res) => {
   try {
     const { original_text, analysis } = req.body;
@@ -227,14 +227,16 @@ app.post('/api/ai-modify-contract', async (req, res) => {
       return res.status(400).json({ error: '缺少必要参数' });
     }
 
-    // 使用专门的AI修改建议服务
-    const modifications = await aiService.generateAISmartModifications(original_text, analysis);
-    
-    res.json({
-      modified_text: modifications.modified_text,
-      modifications: modifications.modifications,
-      summary: modifications.summary
-    });
+    // 现在合规检测和修改已经整合，直接返回分析结果中的优化建议
+    if (analysis.contract_optimization) {
+      res.json({
+        modified_text: analysis.contract_optimization.optimized_text,
+        modifications: analysis.contract_optimization.modifications,
+        summary: analysis.contract_optimization.summary
+      });
+    } else {
+      res.status(400).json({ error: '分析结果中未包含合同优化信息' });
+    }
 
   } catch (error) {
     console.error('AI智能修改建议错误:', error);

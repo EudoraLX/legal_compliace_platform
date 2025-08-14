@@ -14,7 +14,7 @@ class AIService {
 
   async analyzeContract(text) {
     try {
-      const prompt = this.buildAnalysisPrompt(text);
+      const prompt = this.buildUnifiedAnalysisPrompt(text);
       
       const response = await axios.post(
         `${this.baseURL}/chat/completions`,
@@ -23,7 +23,7 @@ class AIService {
           messages: [
             {
               role: "system",
-              content: "你是一个专业的法律合规分析师，专门分析合同的法律合规性。请严格按照JSON格式返回分析结果，包含具体的法条原文对照。"
+              content: "你是一个专业的法律合规分析师和合同优化专家，专门分析合同的法律合规性并提供优化建议。请严格按照JSON格式返回分析结果，包含具体的法条原文对照和合同优化建议。"
             },
             {
               role: "user",
@@ -31,7 +31,7 @@ class AIService {
             }
           ],
           temperature: 0.1,
-          max_tokens: 4000
+          max_tokens: 6000
         },
         {
           headers: {
@@ -45,22 +45,22 @@ class AIService {
 
       const aiResponse = response.data.choices[0].message.content;
       console.log('AI原始响应:', aiResponse);
-      return this.parseAIResponse(aiResponse, text);
+      return this.parseUnifiedAIResponse(aiResponse, text);
     } catch (error) {
       console.error('AI分析失败:', error);
       // 如果AI分析失败，返回基础分析结果
-      return this.fallbackAnalysis(text);
+      return this.fallbackUnifiedAnalysis(text);
     }
   }
 
-  buildAnalysisPrompt(text) {
+  buildUnifiedAnalysisPrompt(text) {
     return `
-请详细分析以下合同文本的法律合规性，并以JSON格式返回结果：
+请详细分析以下合同文本的法律合规性，并提供优化建议。请以JSON格式返回结果：
 
 合同文本：
 ${text}
 
-请按照以下JSON格式返回分析结果，必须包含具体的法条原文对照：
+请按照以下JSON格式返回分析结果，必须包含具体的法条原文对照和合同优化建议：
 
 {
   "compliance_score": 85,
@@ -88,19 +88,26 @@ ${text}
     }
   ],
   "analysis_summary": "总体分析摘要",
-  "contract_modifications": [
-    {
-      "type": "add|modify|delete",
-      "position": "修改位置",
-      "original_text": "原文内容",
-      "suggested_text": "建议修改内容",
-      "reason": "修改原因",
-      "related_article": "相关法条"
-    }
-  ]
+  "contract_optimization": {
+    "optimized_text": "优化后的完整合同文本（必须与原文有明显差异，体现法律合规性改进）",
+    "modifications": [
+      {
+        "type": "add|modify|delete",
+        "position": "具体条款位置（如：第一条、第二条等）",
+        "original_text": "原文中需要修改的具体内容（必须准确引用原文，不能为空）",
+        "optimized_text": "优化后的具体内容（必须与原文不同，体现法律改进）",
+        "reason": "详细的优化原因和法律依据（必须引用具体法条，说明为什么需要优化）",
+        "related_article": "相关的法律条款编号和具体内容（如：《合同法》第X条、《公司法》第X条等）",
+        "highlight_start": 0,
+        "highlight_end": 100,
+        "highlight_type": "add|modify|delete|warning|success|info"
+      }
+    ],
+    "summary": "优化总结和主要改进点"
+  }
 }
 
-请确保：
+重要要求：
 1. compliance_score 是0-100的整数
 2. severity 只能是 "high", "medium", "low" 之一
 3. 所有文本内容都是中文
@@ -109,10 +116,14 @@ ${text}
 6. 提供合同修改建议，包含具体的修改内容
 7. 分析要详细、准确，体现专业法律分析水平
 8. 重点关注合同条款的合法性、完整性和风险控制
+9. 优化后的文本必须与原文有明显差异
+10. 每个修改都要有具体的法律条文支撑
+11. 为每个修改添加高亮信息（highlight_start, highlight_end, highlight_type）
+12. highlight_type 用于前端展示不同类型的高亮效果
 `;
   }
 
-  parseAIResponse(response, originalText) {
+  parseUnifiedAIResponse(response, originalText) {
     try {
       // 尝试提取JSON部分
       const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -126,12 +137,22 @@ ${text}
           suggestions: parsed.suggestions || [],
           matched_articles: parsed.matched_articles || [],
           analysis_summary: parsed.analysis_summary || "AI分析完成",
-          contract_modifications: parsed.contract_modifications || []
+          contract_optimization: parsed.contract_optimization || {}
         };
 
         // 如果没有匹配到条例，添加基础条例检查
         if (analysis.matched_articles.length === 0) {
           analysis.matched_articles = this.getBasicRegulations(originalText);
+        }
+
+        // 处理合同优化部分
+        if (analysis.contract_optimization) {
+          analysis.contract_optimization.optimized_text = 
+            analysis.contract_optimization.optimized_text || originalText;
+          analysis.contract_optimization.modifications = 
+            analysis.contract_optimization.modifications || [];
+          analysis.contract_optimization.summary = 
+            analysis.contract_optimization.summary || "AI优化建议";
         }
 
         return analysis;
@@ -142,7 +163,7 @@ ${text}
     }
     
     // 如果解析失败，返回基础分析
-    return this.fallbackAnalysis(originalText);
+    return this.fallbackUnifiedAnalysis(originalText);
   }
 
   getBasicRegulations(text) {
@@ -226,7 +247,7 @@ ${text}
     return "相关内容在合同中";
   }
 
-  fallbackAnalysis(text) {
+  fallbackUnifiedAnalysis(text) {
     // 基础分析逻辑（当AI不可用时使用）
     const analysis = {
       compliance_score: 70,
@@ -234,7 +255,11 @@ ${text}
       suggestions: ["建议咨询专业律师进行详细审查"],
       matched_articles: this.getBasicRegulations(text),
       analysis_summary: "基础分析完成，建议使用AI分析获得更准确结果",
-      contract_modifications: []
+      contract_optimization: {
+        optimized_text: text,
+        modifications: [],
+        summary: "基础优化建议"
+      }
     };
 
     const textLower = text.toLowerCase();
@@ -272,6 +297,9 @@ ${text}
       });
       analysis.compliance_score -= 10;
     }
+
+    // 生成基础优化建议
+    analysis.contract_optimization.modifications = this.generateFallbackModifications(text);
 
     return analysis;
   }
@@ -625,6 +653,73 @@ ${JSON.stringify(analysis, null, 2)}
       modifications: modifications,
       summary: "基于相关法律法规的合规性修改建议"
     };
+  }
+
+  generateFallbackModifications(text) {
+    const modifications = [];
+    const textLower = text.toLowerCase();
+    
+    // 检查违约责任条款
+    if (textLower.includes("违约责任") && textLower.includes("双方协商确定")) {
+      modifications.push({
+        type: "modify",
+        position: "违约责任条款",
+        original_text: "如任何一方违反本协议，应承担相应法律责任，具体赔偿金额双方协商确定。",
+        optimized_text: "如任何一方违反本协议，应承担相应法律责任。具体赔偿金额按照实际损失计算，最低不低于合同总金额的10%。",
+        reason: "根据《合同法》第107条，当事人一方不履行合同义务或者履行合同义务不符合约定的，应当承担继续履行、采取补救措施或者赔偿损失等违约责任。",
+        related_article: "《合同法》第107条",
+        highlight_start: 0,
+        highlight_end: 100,
+        highlight_type: "modify"
+      });
+    }
+    
+    // 检查合同主体条款
+    if (textLower.includes("甲方") && textLower.includes("乙方") && !textLower.includes("住所")) {
+      modifications.push({
+        type: "add",
+        position: "合同主体条款",
+        original_text: "",
+        optimized_text: "甲方：\n住所：\n法定代表人：\n联系电话：\n\n乙方：\n住所：\n法定代表人：\n联系电话：",
+        reason: "根据《合同法》第12条，合同的内容由当事人约定，一般包括当事人的名称或者姓名和住所等条款。",
+        related_article: "《合同法》第12条",
+        highlight_start: 0,
+        highlight_end: 100,
+        highlight_type: "add"
+      });
+    }
+    
+    // 检查争议解决条款
+    if (!textLower.includes("争议解决") && !textLower.includes("纠纷")) {
+      modifications.push({
+        type: "add",
+        position: "争议解决条款",
+        original_text: "",
+        optimized_text: "因本合同引起的或与本合同有关的任何争议，双方应友好协商解决；协商不成的，任何一方均可向合同签订地人民法院提起诉讼。",
+        reason: "根据《合同法》第12条，合同的内容一般包括解决争议的方法等条款。",
+        related_article: "《合同法》第12条",
+        highlight_start: 0,
+        highlight_end: 100,
+        highlight_type: "add"
+      });
+    }
+    
+    // 如果没有识别到具体问题，提供通用建议
+    if (modifications.length === 0) {
+      modifications.push({
+        type: "add",
+        position: "法律声明条款",
+        original_text: "",
+        optimized_text: "双方承诺严格遵守中华人民共和国相关法律法规要求，确保所有合同条款合法有效。",
+        reason: "根据《民法典》第143条，民事法律行为必须不违反法律、行政法规的强制性规定，不违背公序良俗。",
+        related_article: "《民法典》第143条",
+        highlight_start: 0,
+        highlight_end: 100,
+        highlight_type: "add"
+      });
+    }
+
+    return modifications;
   }
 
   generateSuggestedText(risk) {

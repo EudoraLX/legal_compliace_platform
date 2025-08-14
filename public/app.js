@@ -292,37 +292,60 @@ function displayResults(result) {
 async function generateAndDisplayModifications(originalText, analysis) {
     try {
         // 显示加载状态提示
-        showMessage('AI正在优化合同，生成合规协议...', 'info');
+        showMessage('AI正在处理合同优化建议...', 'info');
         
-        const response = await fetch('/api/ai-modify-contract', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                original_text: originalText,
-                analysis: analysis
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        // 检查AI返回的修改建议是否有效
-        if (!result.modified_text || result.modified_text === originalText) {
-            console.warn('AI返回的优化建议与原文相同，使用基础优化建议');
-            // 如果AI没有提供有效修改，使用基础修改建议
-            const fallbackResult = await generateFallbackModifications(originalText, analysis);
-            displayModificationResult(fallbackResult, originalText);
+        // 检查分析结果中是否已经包含合同优化信息
+        if (analysis.contract_optimization && analysis.contract_optimization.optimized_text) {
+            // 直接使用分析结果中的优化信息
+            const result = {
+                modified_text: analysis.contract_optimization.optimized_text,
+                modifications: analysis.contract_optimization.modifications || [],
+                summary: analysis.contract_optimization.summary || "AI优化建议"
+            };
+            
+            // 检查AI返回的修改建议是否有效
+            if (result.modified_text && result.modified_text !== originalText) {
+                // 显示AI修改建议
+                displayModificationResult(result, originalText);
+                showMessage('AI合同优化完成！', 'success');
+            } else {
+                console.warn('AI返回的优化建议与原文相同，使用基础优化建议');
+                // 如果AI没有提供有效修改，使用基础修改建议
+                const fallbackResult = await generateFallbackModifications(originalText, analysis);
+                displayModificationResult(fallbackResult, originalText);
+            }
         } else {
-            // 显示AI修改建议
-            displayModificationResult(result, originalText);
+            // 如果没有优化信息，尝试调用API获取
+            const response = await fetch('/api/ai-modify-contract', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    original_text: originalText,
+                    analysis: analysis
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            
+            // 检查AI返回的修改建议是否有效
+            if (!result.modified_text || result.modified_text === originalText) {
+                console.warn('AI返回的优化建议与原文相同，使用基础优化建议');
+                // 如果AI没有提供有效修改，使用基础修改建议
+                const fallbackResult = await generateFallbackModifications(originalText, analysis);
+                displayModificationResult(fallbackResult, originalText);
+            } else {
+                // 显示AI修改建议
+                displayModificationResult(result, originalText);
+            }
+            
+            showMessage('AI合同优化完成！', 'success');
         }
-        
-        showMessage('AI合同优化完成！', 'success');
         
     } catch (error) {
         console.error('生成AI优化建议失败:', error);
@@ -355,9 +378,12 @@ async function generateFallbackModifications(originalText, analysis) {
             type: "modify",
             position: "违约责任条款",
             original_text: "如任何一方违反本协议，应承担相应法律责任，具体赔偿金额双方协商确定。",
-            suggested_text: "如任何一方违反本协议，应承担相应法律责任。具体赔偿金额按照实际损失计算，最低不低于合同总金额的10%。",
+            optimized_text: "如任何一方违反本协议，应承担相应法律责任。具体赔偿金额按照实际损失计算，最低不低于合同总金额的10%。",
             reason: "根据《合同法》第107条，当事人一方不履行合同义务或者履行合同义务不符合约定的，应当承担继续履行、采取补救措施或者赔偿损失等违约责任。",
-            related_article: "《合同法》第107条"
+            related_article: "《合同法》第107条",
+            highlight_start: 0,
+            highlight_end: 100,
+            highlight_type: "modify"
         });
     }
     
@@ -367,9 +393,12 @@ async function generateFallbackModifications(originalText, analysis) {
             type: "add",
             position: "合同主体条款",
             original_text: "",
-            suggested_text: "甲方：\n住所：\n法定代表人：\n联系电话：\n\n乙方：\n住所：\n法定代表人：\n联系电话：",
+            optimized_text: "甲方：\n住所：\n法定代表人：\n联系电话：\n\n乙方：\n住所：\n法定代表人：\n联系电话：",
             reason: "根据《合同法》第12条，合同的内容由当事人约定，一般包括当事人的名称或者姓名和住所等条款。",
-            related_article: "《合同法》第12条"
+            related_article: "《合同法》第12条",
+            highlight_start: 0,
+            highlight_end: 100,
+            highlight_type: "add"
         });
     }
     
@@ -379,9 +408,12 @@ async function generateFallbackModifications(originalText, analysis) {
             type: "add",
             position: "争议解决条款",
             original_text: "",
-            suggested_text: "因本合同引起的或与本合同有关的任何争议，双方应友好协商解决；协商不成的，任何一方均可向合同签订地人民法院提起诉讼。",
+            optimized_text: "因本合同引起的或与本合同有关的任何争议，双方应友好协商解决；协商不成的，任何一方均可向合同签订地人民法院提起诉讼。",
             reason: "根据《合同法》第12条，合同的内容一般包括解决争议的方法等条款。",
-            related_article: "《合同法》第12条"
+            related_article: "《合同法》第12条",
+            highlight_start: 0,
+            highlight_end: 100,
+            highlight_type: "add"
         });
     }
     
@@ -391,9 +423,12 @@ async function generateFallbackModifications(originalText, analysis) {
             type: "add",
             position: "法律声明条款",
             original_text: "",
-            suggested_text: "双方承诺严格遵守中华人民共和国相关法律法规要求，确保所有合同条款合法有效。",
+            optimized_text: "双方承诺严格遵守中华人民共和国相关法律法规要求，确保所有合同条款合法有效。",
             reason: "根据《民法典》第143条，民事法律行为必须不违反法律、行政法规的强制性规定，不违背公序良俗。",
-            related_article: "《民法典》第143条"
+            related_article: "《民法典》第143条",
+            highlight_start: 0,
+            highlight_end: 100,
+            highlight_type: "add"
         });
     }
 
@@ -419,20 +454,21 @@ function applyModificationsToText(originalText, modifications) {
     });
     
     sortedModifications.forEach(mod => {
-        if (mod.type === 'modify' && mod.original_text && mod.suggested_text) {
-            modifiedText = modifiedText.replace(mod.original_text, mod.suggested_text);
-        } else if (mod.type === 'add' && mod.suggested_text) {
+        if (mod.type === 'modify' && mod.original_text && (mod.optimized_text || mod.suggested_text)) {
+            modifiedText = modifiedText.replace(mod.original_text, mod.optimized_text || mod.suggested_text);
+        } else if (mod.type === 'add' && (mod.optimized_text || mod.suggested_text)) {
             // 在适当位置添加新条款
+            const addText = mod.optimized_text || mod.suggested_text;
             if (mod.position.includes("法律声明")) {
-                modifiedText += `\n\n第九条 法律声明\n${mod.suggested_text}`;
+                modifiedText += `\n\n第九条 法律声明\n${addText}`;
             } else if (mod.position.includes("合同主体")) {
                 // 在合同开头添加主体信息
-                modifiedText = `第一条 合同主体\n${mod.suggested_text}\n\n${modifiedText}`;
+                modifiedText = `第一条 合同主体\n${addText}\n\n${modifiedText}`;
             } else if (mod.position.includes("争议解决")) {
                 // 在合同末尾添加争议解决条款
-                modifiedText += `\n\n第九条 争议解决\n${mod.suggested_text}`;
+                modifiedText += `\n\n第九条 争议解决\n${addText}`;
             } else {
-                modifiedText += `\n\n${mod.suggested_text}`;
+                modifiedText += `\n\n${addText}`;
             }
         }
     });
@@ -740,24 +776,33 @@ function highlightModificationsInText(text, modifications) {
     if (modifications && modifications.length > 0) {
         // 按照位置排序，从后往前修改，避免位置偏移
         const sortedModifications = modifications.sort((a, b) => {
-            const aPos = text.indexOf(a.suggested_text || '');
-            const bPos = text.indexOf(b.suggested_text || '');
+            // 优先使用 highlight_start 和 highlight_end，如果没有则使用文本搜索
+            if (mod.highlight_start !== undefined && mod.highlight_end !== undefined) {
+                return mod.highlight_end - mod.highlight_start;
+            }
+            const aPos = text.indexOf(a.optimized_text || a.suggested_text || '');
+            const bPos = text.indexOf(b.optimized_text || b.suggested_text || '');
             return bPos - aPos;
         });
         
         sortedModifications.forEach(mod => {
-            if (mod.type === 'modify' && mod.original_text && mod.suggested_text) {
+            // 支持新旧数据结构
+            const optimizedText = mod.optimized_text || mod.suggested_text;
+            const originalText = mod.original_text;
+            const highlightType = mod.highlight_type || 'info';
+            
+            if (mod.type === 'modify' && originalText && optimizedText) {
                 // 高亮修改的部分
-                const highlightedMod = `<span class="highlight-warning" title="原文：${escapeHtml(mod.original_text)}">${escapeHtml(mod.suggested_text)}</span>`;
-                highlightedText = highlightedText.replace(mod.suggested_text, highlightedMod);
-            } else if (mod.type === 'add' && mod.suggested_text) {
+                const highlightedMod = `<span class="highlight-${highlightType}" title="原文：${escapeHtml(originalText)}">${escapeHtml(optimizedText)}</span>`;
+                highlightedText = highlightedText.replace(optimizedText, highlightedMod);
+            } else if (mod.type === 'add' && optimizedText) {
                 // 高亮新增的部分
-                const highlightedAdd = `<span class="highlight-success" title="新增条款">${escapeHtml(mod.suggested_text)}</span>`;
-                highlightedText = highlightedText.replace(mod.suggested_text, highlightedAdd);
-            } else if (mod.type === 'delete' && mod.original_text) {
+                const highlightedAdd = `<span class="highlight-${highlightType}" title="新增条款">${escapeHtml(optimizedText)}</span>`;
+                highlightedText = highlightedText.replace(optimizedText, highlightedAdd);
+            } else if (mod.type === 'delete' && originalText) {
                 // 高亮删除的部分（如果还在文本中）
-                const highlightedDelete = `<span class="highlight-danger" title="已删除">${escapeHtml(mod.original_text)}</span>`;
-                highlightedText = highlightedText.replace(mod.original_text, highlightedDelete);
+                const highlightedDelete = `<span class="highlight-${highlightType}" title="已删除">${escapeHtml(originalText)}</span>`;
+                highlightedText = highlightedText.replace(originalText, highlightedDelete);
             }
         });
     }
@@ -969,10 +1014,10 @@ function showAIModificationDetails(modifications, originalText) {
                             <h6 class="text-success mb-2">
                                 <i class="fas fa-lightbulb"></i> 优化后内容
                             </h6>
-                            ${mod.suggested_text ? `
+                            ${(mod.optimized_text || mod.suggested_text) ? `
                                 <div class="text-suggested">
                                     <strong>优化内容:</strong><br>
-                                    <div class="highlight-success p-2 rounded">${escapeHtml(mod.suggested_text)}</div>
+                                    <div class="highlight-success p-2 rounded">${escapeHtml(mod.optimized_text || mod.suggested_text)}</div>
                                 </div>
                             ` : '<p class="text-muted">无优化内容</p>'}
                         </div>
