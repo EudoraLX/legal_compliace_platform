@@ -8,7 +8,112 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeFileInput();
     loadHistory();
     loadStatistics();
+    
+    // 添加页面卸载时的清理
+    window.addEventListener('beforeunload', function() {
+        cleanupAllModals();
+    });
+    
+    // 添加全局错误处理
+    window.addEventListener('error', function(event) {
+        if (event.error && event.error.message && event.error.message.includes('classList')) {
+            console.warn('检测到classList错误，尝试清理模态框状态');
+            try {
+                cleanupAllModals();
+            } catch (e) {
+                console.warn('清理模态框状态失败:', e);
+            }
+        }
+    });
 });
+
+// 安全的DOM状态检查函数
+function isElementSafe(element, property) {
+    try {
+        return element && 
+               element[property] && 
+               typeof element[property] === 'object' && 
+               element[property] !== null;
+    } catch (e) {
+        return false;
+    }
+}
+
+// 安全的属性操作函数
+function safeRemoveClass(element, className) {
+    try {
+        if (isElementSafe(element, 'classList') && typeof element.classList.remove === 'function') {
+            element.classList.remove(className);
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.warn('安全移除CSS类时出错:', e);
+        return false;
+    }
+}
+
+function safeSetStyle(element, property, value) {
+    try {
+        if (isElementSafe(element, 'style')) {
+            element.style[property] = value;
+            return true;
+        }
+        return false;
+    } catch (e) {
+        console.warn('安全设置样式时出错:', e);
+        return false;
+    }
+}
+
+// 清理所有模态框
+function cleanupAllModals() {
+    try {
+        // 查找所有模态框实例并清理
+        const modalElements = document.querySelectorAll('.modal');
+        modalElements.forEach(modalElement => {
+            if (modalElement) {
+                try {
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) {
+                        modal.dispose();
+                    }
+                } catch (e) {
+                    console.warn('清理模态框实例时出错:', e);
+                }
+                
+                // 重置模态框状态
+                try {
+                    modalElement.style.display = 'none';
+                    modalElement.setAttribute('aria-hidden', 'true');
+                    modalElement.removeAttribute('aria-modal');
+                } catch (e) {
+                    console.warn('重置模态框状态时出错:', e);
+                }
+            }
+        });
+        
+        // 安全地清理页面状态
+        safeRemoveClass(document.body, 'modal-open');
+        safeSetStyle(document.body, 'overflow', '');
+        safeSetStyle(document.body, 'paddingRight', '');
+        
+        // 安全地移除所有背景遮罩
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => {
+            if (backdrop && backdrop.parentNode) {
+                try {
+                    backdrop.remove();
+                } catch (e) {
+                    console.warn('移除背景遮罩时出错:', e);
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.warn('清理模态框时出错:', error);
+    }
+}
 
 // 初始化文件输入
 function initializeFileInput() {
@@ -1066,7 +1171,7 @@ function updateFloatingStats() {
     `;
 }
 
-// 加载历史记录
+// 加载历史记录（简化版，只显示最近5条）
 async function loadHistory() {
     try {
         console.log('开始加载历史记录...');
@@ -1082,12 +1187,20 @@ async function loadHistory() {
         
         const historyList = document.getElementById('historyList');
         if (!history || history.length === 0) {
-            historyList.innerHTML = '<p class="text-muted">暂无分析历史</p>';
+            historyList.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">暂无分析历史</h5>
+                    <p class="text-muted">开始您的第一次合同分析吧！</p>
+                </div>
+            `;
             return;
         }
         
-        const historyHtml = history.slice(0, 5).map(item => {
-            console.log('处理历史记录项:', item);
+        // 只显示最近5条记录
+        const recentHistory = history.slice(0, 5);
+        let historyHtml = recentHistory.map(item => {
+            const scoreClass = getScoreBadgeColor(item.risk_score);
             return `
                 <div class="history-item" onclick="viewHistoryDetail('${item.id}')" style="cursor: pointer; padding: 20px; border: 1px solid #dee2e6; border-radius: 10px; margin-bottom: 15px; transition: all 0.3s ease; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                     <div class="d-flex justify-content-between align-items-center">
@@ -1103,10 +1216,13 @@ async function loadHistory() {
                             </div>
                         </div>
                         <div class="text-end ms-3">
-                            <div class="badge bg-${getScoreBadgeColor(item.risk_score)} fs-5 px-3 py-2 mb-2">
+                            <div class="badge bg-${scoreClass} fs-5 px-3 py-2 mb-2">
                                 ${item.risk_score || 0}分
                             </div>
                             <br>
+                            <button class="btn btn-sm btn-outline-primary" onclick="viewHistoryDetail('${item.id}', event)" title="查看详情">
+                                <i class="fas fa-eye"></i>
+                            </button>
                             <button class="btn btn-sm btn-outline-danger" onclick="deleteHistory('${item.id}', event)" title="删除记录">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -1121,12 +1237,31 @@ async function loadHistory() {
             `;
         }).join('');
         
+        // 如果有更多记录，显示提示
+        if (history.length > 5) {
+            historyHtml += `
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        还有 ${history.length - 5} 条记录，点击上方按钮查看完整历史
+                    </small>
+                </div>
+            `;
+        }
+        
         historyList.innerHTML = historyHtml;
         console.log('历史记录HTML已更新');
     } catch (error) {
         console.error('加载历史记录失败:', error);
         const historyList = document.getElementById('historyList');
-        historyList.innerHTML = `<p class="text-danger">加载历史记录失败: ${error.message}</p>`;
+        historyList.innerHTML = `
+            <div class="alert alert-danger" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                加载历史记录失败: ${error.message}
+                <button class="btn btn-sm btn-outline-danger ms-3" onclick="loadHistory()">
+                    <i class="fas fa-redo"></i> 重试
+                </button>
+            </div>
+        `;
     }
 }
 
@@ -1188,16 +1323,36 @@ function displayHistoryDetailModal(contract) {
     console.log('分析结果数据:', analysis);
     
     try {
+        // 检查Bootstrap是否可用
+        if (typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+            console.error('Bootstrap Modal 不可用');
+            showMessage('模态框组件不可用，请刷新页面重试', 'danger');
+            return;
+        }
+        
         const modalElement = document.getElementById('historyDetailModal');
         if (!modalElement) {
             console.error('找不到模态框元素');
             return;
         }
         
-        const modal = new bootstrap.Modal(modalElement);
+        // 清理之前的模态框实例
+        const existingModal = bootstrap.Modal.getInstance(modalElement);
+        if (existingModal) {
+            try {
+                existingModal.dispose();
+            } catch (e) {
+                console.warn('清理现有模态框实例时出错:', e);
+            }
+        }
+        
+        // 重置模态框状态
+        modalElement.style.display = 'none';
+        modalElement.setAttribute('aria-hidden', 'true');
+        modalElement.removeAttribute('aria-modal');
         
         // 更新弹框标题
-        const titleElement = document.getElementById('historyDetailModalLabel');
+        const titleElement = modalElement.querySelector('#historyDetailModalLabel');
         if (titleElement) {
             titleElement.innerHTML = `<i class="fas fa-file-alt"></i> 分析详情 - ${contract.original_name || '未知文件'}`;
         }
@@ -1280,13 +1435,79 @@ function displayHistoryDetailModal(contract) {
             </div>
         `;
         
-        const contentElement = document.getElementById('historyDetailContent');
+        const contentElement = modalElement.querySelector('#historyDetailContent');
         if (contentElement) {
             contentElement.innerHTML = content;
         }
         
-        modal.show();
-        console.log('模态框显示成功');
+        // 创建新的模态框实例
+        let modal;
+        try {
+            modal = new bootstrap.Modal(modalElement, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+        } catch (modalError) {
+            console.error('创建模态框实例失败:', modalError);
+            // 如果创建失败，尝试手动显示
+            modalElement.style.display = 'block';
+            modalElement.setAttribute('aria-hidden', 'false');
+            modalElement.setAttribute('aria-modal', 'true');
+            return;
+        }
+        
+        // 添加模态框事件监听器
+        modalElement.addEventListener('hidden.bs.modal', function() {
+            // 模态框隐藏后清理焦点和状态
+            try {
+                // 使用安全函数清理页面状态
+                safeRemoveClass(document.body, 'modal-open');
+                safeSetStyle(document.body, 'overflow', '');
+                safeSetStyle(document.body, 'paddingRight', '');
+                
+                // 安全地移除背景遮罩
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop && backdrop.parentNode) {
+                    try {
+                        backdrop.remove();
+                    } catch (e) {
+                        console.warn('移除背景遮罩时出错:', e);
+                    }
+                }
+            } catch (e) {
+                console.warn('清理模态框状态时出错:', e);
+            }
+        });
+        
+        // 为关闭按钮添加点击事件
+        const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"], .btn-close');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                closeHistoryModal();
+            });
+        });
+        
+        // 显示模态框
+        try {
+            if (modal && typeof modal.show === 'function') {
+                modal.show();
+                console.log('模态框显示成功');
+            } else {
+                // 如果模态框实例无效，手动显示
+                modalElement.style.display = 'block';
+                modalElement.setAttribute('aria-hidden', 'false');
+                modalElement.setAttribute('aria-modal', 'true');
+                console.log('模态框手动显示成功');
+            }
+        } catch (showError) {
+            console.error('显示模态框失败:', showError);
+            // 强制手动显示
+            modalElement.style.display = 'block';
+            modalElement.setAttribute('aria-hidden', 'false');
+            modalElement.setAttribute('aria-modal', 'true');
+        }
         
     } catch (error) {
         console.error('显示历史详情弹框时出错:', error);
@@ -1364,14 +1585,100 @@ function viewFullAnalysis() {
         contract_text: contract.content || contract.contract_text
     });
     
-    // 关闭弹框
-    const modal = bootstrap.Modal.getInstance(document.getElementById('historyDetailModal'));
-    modal.hide();
+    // 关闭弹框并清理
+    closeHistoryModal();
     
     // 滚动到结果区域
     document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
     
     showMessage('已跳转到完整分析页面', 'success');
+}
+
+// 关闭历史详情弹框并清理
+function closeHistoryModal() {
+    const modalElement = document.getElementById('historyDetailModal');
+    if (!modalElement) {
+        console.warn('模态框元素不存在');
+        return;
+    }
+    
+    try {
+        // 检查Bootstrap是否可用
+        if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal && typeof modal.hide === 'function') {
+                try {
+                    modal.hide();
+                } catch (hideError) {
+                    console.warn('隐藏模态框失败:', hideError);
+                    // 如果隐藏失败，手动隐藏
+                    modalElement.style.display = 'none';
+                }
+            } else {
+                // 如果没有找到模态框实例，手动隐藏
+                modalElement.style.display = 'none';
+            }
+        } else {
+            // Bootstrap不可用，直接手动隐藏
+            modalElement.style.display = 'none';
+        }
+        
+        // 手动清理模态框状态
+        setTimeout(() => {
+            try {
+                // 安全地移除模态框相关的CSS类
+                safeRemoveClass(document.body, 'modal-open');
+                safeSetStyle(document.body, 'overflow', '');
+                safeSetStyle(document.body, 'paddingRight', '');
+                
+                // 安全地移除背景遮罩
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop && backdrop.parentNode) {
+                    backdrop.remove();
+                }
+                
+                // 重置模态框状态
+                if (modalElement) {
+                    modalElement.style.display = 'none';
+                    modalElement.setAttribute('aria-hidden', 'true');
+                    modalElement.removeAttribute('aria-modal');
+                }
+                
+                // 将焦点返回到触发弹框的元素
+                const historyItem = document.querySelector('.history-item:focus');
+                if (historyItem && historyItem.focus) {
+                    historyItem.focus();
+                } else {
+                    // 如果没有找到触发元素，将焦点设置到页面主体
+                    if (document.body && document.body.focus && typeof document.body.focus === 'function') {
+                        document.body.focus();
+                    }
+                }
+            } catch (cleanupError) {
+                console.warn('清理模态框状态时出错:', cleanupError);
+            }
+        }, 150);
+        
+    } catch (error) {
+        console.error('关闭模态框时出错:', error);
+        // 强制清理
+        try {
+            if (modalElement) {
+                modalElement.style.display = 'none';
+                modalElement.setAttribute('aria-hidden', 'true');
+                modalElement.removeAttribute('aria-modal');
+            }
+            safeRemoveClass(document.body, 'modal-open');
+            safeSetStyle(document.body, 'overflow', '');
+            safeSetStyle(document.body, 'paddingRight', '');
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop && backdrop.parentNode) {
+                backdrop.remove();
+            }
+        } catch (forceCleanupError) {
+            console.error('强制清理模态框时出错:', forceCleanupError);
+        }
+    }
 }
 
 // 删除历史记录
@@ -1509,4 +1816,98 @@ AI分析平台: 法律合同合规AI分析系统
     URL.revokeObjectURL(url);
     
     showMessage('分析报告导出成功！', 'success');
-} 
+}
+
+// 跳转到完整历史记录页面
+function viewFullHistory() {
+    window.location.href = 'history.html';
+}
+
+// 下载合同文件
+function downloadContract(contractId) {
+    if (!contractId) {
+        showMessage('合同ID无效', 'warning');
+        return;
+    }
+    
+    try {
+        // 创建下载链接
+        const a = document.createElement('a');
+        a.href = `/api/contract/${contractId}/download`;
+        a.download = `合同文件_${contractId}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        showMessage('合同文件下载成功！', 'success');
+    } catch (error) {
+        console.error('下载合同文件失败:', error);
+        showMessage('下载合同文件失败', 'danger');
+    }
+}
+
+// 下载分析报告
+function downloadAnalysisReport() {
+    if (!window.currentHistoryContract) {
+        showMessage('没有可下载的分析数据', 'warning');
+        return;
+    }
+    
+    const contract = window.currentHistoryContract;
+    const analysis = contract.analysis_result;
+    
+    // 生成报告内容
+    let report = `法律合同合规AI分析报告\n\n`;
+    report += `文件名: ${contract.original_name || '未知文件'}\n`;
+    report += `分析时间: ${new Date(contract.created_at).toLocaleString()}\n`;
+    report += `合规评分: ${analysis.compliance_score || 0}分\n`;
+    report += `评分说明: ${getScoreDescription(analysis.compliance_score || 0)}\n\n`;
+    
+    if (analysis.analysis_summary) {
+        report += `分析摘要: ${analysis.analysis_summary}\n\n`;
+    }
+    
+    if (analysis.matched_articles && analysis.matched_articles.length > 0) {
+        report += `涉及相关条例:\n`;
+        analysis.matched_articles.forEach(article => {
+            report += `- ${article.article}: ${article.description}\n`;
+        });
+        report += `\n`;
+    }
+    
+    if (analysis.risk_factors && analysis.risk_factors.length > 0) {
+        report += `风险因素:\n`;
+        analysis.risk_factors.forEach(risk => {
+            report += `- ${risk.type}: ${risk.description}\n`;
+            report += `  建议: ${risk.suggestion}\n`;
+        });
+        report += `\n`;
+    }
+    
+    if (analysis.suggestions && analysis.suggestions.length > 0) {
+        report += `改进建议:\n`;
+        analysis.suggestions.forEach(suggestion => {
+            report += `- ${suggestion}\n`;
+        });
+        report += `\n`;
+    }
+    
+    report += `合同内容:\n${contract.content || '暂无内容'}\n\n`;
+    report += `---\n报告生成时间: ${new Date().toLocaleString()}\nAI分析平台: 法律合同合规AI分析系统`;
+    
+    // 创建下载链接
+    const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `合同合规分析报告_${contract.original_name || '未知文件'}_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showMessage('分析报告下载成功！', 'success');
+    
+    // 下载完成后关闭弹框
+    closeHistoryModal();
+}

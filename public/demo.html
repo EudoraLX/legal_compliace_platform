@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML结构优化演示</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .demo-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin: 0 auto;
+            max-width: 1000px;
+        }
+        
+        .feature-card {
+            border: 1px solid #dee2e6;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+        }
+        
+        .btn-demo {
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 500;
+            margin: 10px 5px;
+        }
+        
+        .comparison-table {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .comparison-table th {
+            background: #e9ecef;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <div class="text-center mb-5">
+            <h1 class="display-4 text-primary">
+                <i class="fas fa-rocket"></i> HTML结构优化演示
+            </h1>
+            <p class="lead text-muted">法律合同合规AI分析平台的模块化重构</p>
+        </div>
+
+        <!-- 优化概述 -->
+        <div class="feature-card">
+            <div class="feature-icon text-primary">
+                <i class="fas fa-cogs"></i>
+            </div>
+            <h3 class="text-center mb-4">优化概述</h3>
+            <p class="text-center">
+                将原本集中在一个页面中的所有功能进行模块化分离，提升代码可维护性和用户体验。
+            </p>
+        </div>
+
+        <!-- 页面结构对比 -->
+        <div class="feature-card">
+            <h4><i class="fas fa-table"></i> 页面结构对比</h4>
+            <div class="comparison-table">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>功能模块</th>
+                            <th>优化前 (index.html)</th>
+                            <th>优化后</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>合同上传分析</strong></td>
+                            <td>✅ 完整功能</td>
+                            <td>✅ 完整功能 + 简化历史</td>
+                        </tr>
+                        <tr>
+                            <td><strong>历史记录管理</strong></td>
+                            <td>⚠️ 基础功能，占用大量空间</td>
+                            <td>✅ 独立页面，完整功能</td>
+                        </tr>
+                        <tr>
+                            <td><strong>代码结构</td>
+                            <td>⚠️ 单文件，代码冗长</td>
+                            <td>✅ 模块化，易于维护</td>
+                        </tr>
+                        <tr>
+                            <td><strong>用户体验</td>
+                            <td>⚠️ 功能混杂，页面冗长</td>
+                            <td>✅ 功能清晰，导航便捷</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 主要改进 -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon text-success">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <h5>主页优化 (index.html)</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i> 专注合同分析功能</li>
+                        <li><i class="fas fa-check text-success me-2"></i> 简化历史记录显示</li>
+                        <li><i class="fas fa-check text-success me-2"></i> 快速跳转完整历史</li>
+                        <li><i class="fas fa-check text-success me-2"></i> 减少页面滚动</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon text-info">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h5>历史记录页面 (history.html)</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i> 完整的历史记录管理</li>
+                        <li><i class="fas fa-check text-success me-2"></i> 搜索和筛选功能</li>
+                        <li><i class="fas fa-check text-success me-2"></i> 分页显示支持</li>
+                        <li><i class="fas fa-check text-success me-2"></i> 详情预览弹框</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- 技术特性 -->
+        <div class="feature-card">
+            <h4><i class="fas fa-code"></i> 技术特性</h4>
+            <div class="row">
+                <div class="col-md-4">
+                    <h6><i class="fas fa-puzzle-piece text-primary"></i> 模块化设计</h6>
+                    <p class="small">功能分离，代码清晰，易于维护</p>
+                </div>
+                <div class="col-md-4">
+                    <h6><i class="fas fa-mobile-alt text-success"></i> 响应式布局</h6>
+                    <p class="small">支持各种设备尺寸，移动端友好</p>
+                </div>
+                <div class="col-md-4">
+                    <h6><i class="fas fa-rocket text-warning"></i> 性能优化</h6>
+                    <p class="small">按需加载，减少初始页面大小</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 文件结构 -->
+        <div class="feature-card">
+            <h4><i class="fas fa-folder-tree"></i> 新的文件结构</h4>
+            <div class="code-block">
+public/
+├── index.html          # 主页 - 合同分析
+├── history.html        # 历史记录页面
+├── app.js             # 主页逻辑
+└── history.js         # 历史记录逻辑
+            </div>
+            <p class="text-muted">
+                <i class="fas fa-info-circle me-2"></i>
+                每个页面都有独立的HTML和JavaScript文件，便于开发和维护
+            </p>
+        </div>
+
+        <!-- 功能演示 -->
+        <div class="feature-card">
+            <h4><i class="fas fa-play-circle"></i> 功能演示</h4>
+            <div class="text-center">
+                <a href="index.html" class="btn btn-primary btn-demo">
+                    <i class="fas fa-home"></i> 查看主页
+                </a>
+                <a href="history.html" class="btn btn-success btn-demo">
+                    <i class="fas fa-history"></i> 查看历史记录
+                </a>
+                <button class="btn btn-info btn-demo" onclick="showDemoModal()">
+                    <i class="fas fa-eye"></i> 演示弹框
+                </button>
+            </div>
+        </div>
+
+        <!-- 使用说明 -->
+        <div class="feature-card">
+            <h4><i class="fas fa-book"></i> 使用说明</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>1. 合同分析</h6>
+                    <ol class="small">
+                        <li>访问主页 (index.html)</li>
+                        <li>上传合同文件</li>
+                        <li>等待AI分析完成</li>
+                        <li>查看分析结果</li>
+                    </ol>
+                </div>
+                <div class="col-md-6">
+                    <h6>2. 历史记录管理</h6>
+                    <ol class="small">
+                        <li>点击"查看完整历史"</li>
+                        <li>在历史页面搜索筛选</li>
+                        <li>点击记录查看详情</li>
+                        <li>管理分析记录</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <!-- 优势总结 -->
+        <div class="feature-card bg-light">
+            <h4 class="text-center text-primary">
+                <i class="fas fa-star"></i> 优化优势总结
+            </h4>
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <i class="fas fa-code fa-2x text-primary mb-2"></i>
+                    <h6>代码清晰</h6>
+                    <p class="small">模块化分离，易于理解和维护</p>
+                </div>
+                <div class="col-md-3">
+                    <i class="fas fa-users fa-2x text-success mb-2"></i>
+                    <h6>用户体验</h6>
+                    <p class="small">功能专注，操作便捷</p>
+                </div>
+                <div class="col-md-3">
+                    <i class="fas fa-tools fa-2x text-warning mb-2"></i>
+                    <h6>开发效率</h6>
+                    <p class="small">独立开发，减少冲突</p>
+                </div>
+                <div class="col-md-3">
+                    <i class="fas fa-expand-arrows-alt fa-2x text-info mb-2"></i>
+                    <h6>扩展性</h6>
+                    <p class="small">便于添加新功能模块</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 演示弹框 -->
+    <div class="modal fade" id="demoModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-eye"></i> 历史记录详情弹框演示
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-chart-line"></i> 合规评分</h6>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div class="display-4 text-success">85分</div>
+                                    <p class="text-muted">优秀 - 合同基本符合相关法律法规要求</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> 分析摘要</h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="mb-0">该合同在大部分方面符合《中华人民共和国对外贸易法》的要求...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        这是历史记录详情弹框的演示效果，实际使用时点击历史记录即可查看完整的分析详情。
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <a href="history.html" class="btn btn-primary">体验完整功能</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function showDemoModal() {
+            const modal = new bootstrap.Modal(document.getElementById('demoModal'));
+            modal.show();
+        }
+    </script>
+</body>
+</html> 
