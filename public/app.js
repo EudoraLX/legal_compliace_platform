@@ -276,20 +276,14 @@ function displayResults(result) {
     // 显示优化概览
     displayOptimizationOverview(analysis);
     
-    // 显示三栏对比
+    // 显示对比面板
     displayComparisonPanels(result.contract_text || '', analysis);
     
-    // 显示AI优化后的完整合同
-    displayOptimizedContract(analysis);
-    
-    // 自动生成AI修改建议并显示（如果还没有优化内容）
-    if (!analysis.contract_optimization || !analysis.contract_optimization.optimized_text) {
-        generateAndDisplayModifications(result.contract_text || '', analysis);
-    }
-    
     // 显示结果区域
-    document.getElementById('progressSection').style.display = 'none';
     document.getElementById('resultSection').style.display = 'block';
+    
+    // 隐藏进度区域
+    document.getElementById('progressSection').style.display = 'none';
     
     // 刷新历史记录和统计
     loadHistory();
@@ -507,38 +501,7 @@ function displayModificationResult(result, originalText) {
     }
 }
 
-// 显示AI优化后的完整合同
-function displayOptimizedContract(analysis) {
-    if (!analysis.contract_optimization || !analysis.contract_optimization.optimized_text) {
-        return;
-    }
-    
-    const optimizedText = analysis.contract_optimization.optimized_text;
-    const textarea = document.getElementById('originalContractText');
-    
-    if (textarea) {
-        textarea.value = optimizedText;
-        // 更新全局变量
-        window.originalContractText = optimizedText;
-        
-        // 显示下载按钮
-        const downloadBtn = document.getElementById('downloadAIBtn');
-        if (downloadBtn) {
-            downloadBtn.innerHTML = '<i class="fas fa-download"></i> 下载优化后合同';
-            downloadBtn.onclick = downloadOptimizedContract;
-            downloadBtn.style.display = 'inline-block';
-        }
-        
-        showMessage('AI优化后的合同已显示在下方文本区域', 'success');
-    }
-}
-
-// 在页面加载完成后自动应用优化内容
-function autoApplyOptimizedContent() {
-    if (currentAnalysis && currentAnalysis.analysis.contract_optimization) {
-        displayOptimizedContract(currentAnalysis.analysis);
-    }
-}
+// 这些函数已不再需要，因为优化后的合同现在直接显示在修改后合同面板中
 
 // 显示优化概览
 function displayOptimizationOverview(analysis) {
@@ -580,16 +543,16 @@ function displayOptimizationOverview(analysis) {
     document.getElementById('lawCount').textContent = lawCount;
 }
 
-// 显示三栏对比面板
+// 显示并排对比面板
 function displayComparisonPanels(originalText, analysis) {
     // 显示原文
     displayOriginalText(originalText, analysis);
     
-    // 显示修改建议
-    displayModificationList(analysis);
+    // 显示修改后的合同
+    displayModifiedText(analysis);
     
-    // 显示法律条文
-    displayLawReferenceList(analysis);
+    // 显示合并的修改建议和法律依据
+    displayCombinedModificationList(analysis);
 }
 
 // 显示原文
@@ -613,43 +576,65 @@ function displayOriginalText(originalText, analysis) {
     }
 }
 
-// 显示修改建议列表
-function displayModificationList(analysis) {
-    const modificationList = document.getElementById('modificationList');
-    if (!modificationList || !analysis.contract_optimization?.modifications) return;
+// 显示修改后的合同
+function displayModifiedText(analysis) {
+    const modifiedTextContent = document.getElementById('modifiedTextContent');
+    if (!modifiedTextContent) return;
+    
+    // 清空内容
+    modifiedTextContent.innerHTML = '';
+    
+    if (analysis.contract_optimization && analysis.contract_optimization.optimized_text) {
+        const optimizedText = analysis.contract_optimization.optimized_text;
+        const modifications = analysis.contract_optimization.modifications || [];
+        
+        let highlightedText = optimizedText;
+        
+        // 为修改后的文本添加高光标记
+        if (modifications.length > 0) {
+            const sortedModifications = [...modifications].sort((a, b) => 
+                (b.highlight_start || 0) - (a.highlight_start || 0)
+            );
+            
+            sortedModifications.forEach((mod, index) => {
+                if (mod.optimized_text && mod.highlight_start !== undefined && mod.highlight_end !== undefined) {
+                    const start = mod.highlight_start;
+                    const end = mod.highlight_end;
+                    const before = highlightedText.substring(0, start);
+                    const after = highlightedText.substring(end);
+                    const highlighted = `<span class="highlight-marker" data-modification-index="${index}">${highlightedText.substring(start, end)}</span>`;
+                    highlightedText = before + highlighted + after;
+                }
+            });
+        }
+        
+        modifiedTextContent.innerHTML = highlightedText.replace(/\n/g, '<br>');
+    } else {
+        modifiedTextContent.textContent = '暂无修改建议';
+    }
+    
+    // 设置同步滚动
+    setupSyncScroll();
+}
+
+// 显示合并的修改建议和法律依据
+function displayCombinedModificationList(analysis) {
+    const combinedModificationList = document.getElementById('combinedModificationList');
+    if (!combinedModificationList || !analysis.contract_optimization?.modifications) return;
     
     const modifications = analysis.contract_optimization.modifications;
     const html = modifications.map((mod, index) => `
-        <div class="modification-item" onclick="highlightModification(${index})" data-index="${index}">
-            <div class="modification-header">
-                <span class="modification-type ${mod.type}">${getModificationTypeText(mod.type)}</span>
-                <small>${mod.position}</small>
+        <div class="combined-modification-item" onclick="highlightModification(${index})" data-index="${index}">
+            <div class="modification-type ${mod.type}">${getModificationTypeText(mod.type)}</div>
+            <div class="modification-text">${escapeHtml(mod.original_text || '新增内容')}</div>
+            <div class="law-reference">
+                <div class="law-title">${escapeHtml(mod.related_article || '相关法律条款')}</div>
+                <div class="law-content">${escapeHtml(mod.reason || '修改原因和法律依据')}</div>
             </div>
-            <div class="modification-title">${escapeHtml(mod.original_text || '新增内容')}</div>
-            <div class="modification-reason">${escapeHtml(mod.reason)}</div>
-            <div class="modification-law">${escapeHtml(mod.related_article)}</div>
         </div>
     `).join('');
     
-    modificationList.innerHTML = html;
-}
-
-// 显示法律条文列表
-function displayLawReferenceList(analysis) {
-    const lawReferenceList = document.getElementById('lawReferenceList');
-    if (!lawReferenceList || !analysis.matched_articles) return;
-    
-    const html = analysis.matched_articles.map(law => `
-        <div class="law-item">
-            <div class="law-title">${escapeHtml(law.article)}</div>
-            <div class="law-content">${escapeHtml(law.original_text)}</div>
-            <span class="law-compliance ${law.compliance ? 'compliant' : 'non-compliant'}">
-                ${law.compliance ? '符合要求' : '需要关注'}
-            </span>
-        </div>
-    `).join('');
-    
-    lawReferenceList.innerHTML = html;
+    combinedModificationList.innerHTML = html;
 }
 
 // 获取修改类型文本
@@ -660,6 +645,38 @@ function getModificationTypeText(type) {
         case 'delete': return '删除';
         default: return type;
     }
+}
+
+// 设置同步滚动
+function setupSyncScroll() {
+    const originalContainer = document.getElementById('originalTextContainer');
+    const modifiedContainer = document.getElementById('modifiedTextContainer');
+    
+    if (!originalContainer || !modifiedContainer) return;
+    
+    // 原文滚动时，修改后文本同步滚动
+    originalContainer.addEventListener('scroll', function() {
+        if (!this.isScrolling) {
+            modifiedContainer.isScrolling = true;
+            modifiedContainer.scrollTop = this.scrollTop;
+            modifiedContainer.scrollLeft = this.scrollLeft;
+            setTimeout(() => {
+                modifiedContainer.isScrolling = false;
+            }, 50);
+        }
+    });
+    
+    // 修改后文本滚动时，原文同步滚动
+    modifiedContainer.addEventListener('scroll', function() {
+        if (!this.isScrolling) {
+            originalContainer.isScrolling = true;
+            originalContainer.scrollTop = this.scrollTop;
+            originalContainer.scrollLeft = this.scrollLeft;
+            setTimeout(() => {
+                originalContainer.isScrolling = false;
+            }, 50);
+        }
+    });
 }
 
 // 高亮指定修改
@@ -675,15 +692,23 @@ function highlightModification(index) {
         selectedItem.classList.add('active');
     }
     
-    // 高亮原文中对应的位置
+    // 高亮原文和修改后文本中对应的位置
     document.querySelectorAll('.highlight-marker').forEach(marker => {
         marker.classList.remove('highlight-active');
     });
     
-    const targetMarker = document.querySelector(`[data-modification="${index}"]`);
-    if (targetMarker) {
-        targetMarker.classList.add('highlight-active');
-        targetMarker.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // 高亮原文中的对应位置
+    const originalMarker = document.querySelector(`[data-modification="${index}"]`);
+    if (originalMarker) {
+        originalMarker.classList.add('highlight-active');
+        originalMarker.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    // 高亮修改后文本中的对应位置
+    const modifiedMarker = document.querySelector(`[data-modification-index="${index}"]`);
+    if (modifiedMarker) {
+        modifiedMarker.classList.add('highlight-active');
+        modifiedMarker.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 }
 
@@ -695,8 +720,20 @@ function toggleHighlightMode() {
 
 // 切换法律详情
 function toggleLawDetails() {
-    const list = document.getElementById('lawReferenceList');
+    const list = document.getElementById('combinedModificationList');
     list.classList.toggle('expanded');
+    
+    // 切换所有法律依据内容的显示状态
+    const lawContents = list.querySelectorAll('.law-content');
+    lawContents.forEach(content => {
+        if (list.classList.contains('expanded')) {
+            content.style.maxHeight = 'none';
+            content.style.overflow = 'visible';
+        } else {
+            content.style.maxHeight = '60px';
+            content.style.overflow = 'hidden';
+        }
+    });
 }
 
 // 应用所有修改
@@ -713,20 +750,30 @@ function applyAllModifications() {
 
 // 下载修改后的合同文件
 function downloadOptimizedContract() {
-    if (!currentAnalysis || !currentAnalysis.analysis.contract_optimization) {
-        showMessage('没有可下载的优化后合同！', 'warning');
+    // 优先从修改后合同面板获取内容
+    const modifiedTextContent = document.getElementById('modifiedTextContent');
+    if (modifiedTextContent && modifiedTextContent.textContent.trim()) {
+        const optimizedText = modifiedTextContent.textContent;
+        downloadTextFile(optimizedText, '优化后合同.txt');
         return;
     }
     
-    const optimizedText = currentAnalysis.analysis.contract_optimization.optimized_text;
-    if (!optimizedText) {
-        showMessage('优化后的合同内容为空！', 'warning');
-        return;
+    // 如果面板中没有内容，尝试从分析结果获取
+    if (currentAnalysis && currentAnalysis.analysis.contract_optimization) {
+        const optimizedText = currentAnalysis.analysis.contract_optimization.optimized_text;
+        if (optimizedText) {
+            downloadTextFile(optimizedText, '优化后合同.txt');
+            return;
+        }
     }
     
+    showMessage('没有可下载的优化后合同！', 'warning');
+}
+
+// 下载文本文件的通用函数
+function downloadTextFile(content, filename) {
     try {
-        // 创建下载链接
-        const blob = new Blob([optimizedText], { type: 'text/plain;charset=utf-8' });
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
