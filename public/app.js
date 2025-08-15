@@ -279,8 +279,13 @@ function displayResults(result) {
     // 显示三栏对比
     displayComparisonPanels(result.contract_text || '', analysis);
     
-    // 自动生成AI修改建议并显示
-    generateAndDisplayModifications(result.contract_text || '', analysis);
+    // 显示AI优化后的完整合同
+    displayOptimizedContract(analysis);
+    
+    // 自动生成AI修改建议并显示（如果还没有优化内容）
+    if (!analysis.contract_optimization || !analysis.contract_optimization.optimized_text) {
+        generateAndDisplayModifications(result.contract_text || '', analysis);
+    }
     
     // 显示结果区域
     document.getElementById('progressSection').style.display = 'none';
@@ -306,17 +311,9 @@ async function generateAndDisplayModifications(originalText, analysis) {
                 summary: analysis.contract_optimization.summary || "AI优化建议"
             };
             
-            // 检查AI返回的修改建议是否有效
-            if (result.modified_text && result.modified_text !== originalText) {
-                // 显示AI修改建议
-                displayModificationResult(result, originalText);
-                showMessage('AI合同优化完成！', 'success');
-            } else {
-                console.warn('AI返回的优化建议与原文相同，使用基础优化建议');
-                // 如果AI没有提供有效修改，使用基础修改建议
-                const fallbackResult = await generateFallbackModifications(originalText, analysis);
-                displayModificationResult(fallbackResult, originalText);
-            }
+            // 显示AI修改建议
+            displayModificationResult(result, originalText);
+            showMessage('AI合同优化完成！', 'success');
         } else {
             // 如果没有优化信息，尝试调用API获取
             const response = await fetch('/api/ai-modify-contract', {
@@ -510,6 +507,39 @@ function displayModificationResult(result, originalText) {
     }
 }
 
+// 显示AI优化后的完整合同
+function displayOptimizedContract(analysis) {
+    if (!analysis.contract_optimization || !analysis.contract_optimization.optimized_text) {
+        return;
+    }
+    
+    const optimizedText = analysis.contract_optimization.optimized_text;
+    const textarea = document.getElementById('originalContractText');
+    
+    if (textarea) {
+        textarea.value = optimizedText;
+        // 更新全局变量
+        window.originalContractText = optimizedText;
+        
+        // 显示下载按钮
+        const downloadBtn = document.getElementById('downloadAIBtn');
+        if (downloadBtn) {
+            downloadBtn.innerHTML = '<i class="fas fa-download"></i> 下载优化后合同';
+            downloadBtn.onclick = downloadOptimizedContract;
+            downloadBtn.style.display = 'inline-block';
+        }
+        
+        showMessage('AI优化后的合同已显示在下方文本区域', 'success');
+    }
+}
+
+// 在页面加载完成后自动应用优化内容
+function autoApplyOptimizedContent() {
+    if (currentAnalysis && currentAnalysis.analysis.contract_optimization) {
+        displayOptimizedContract(currentAnalysis.analysis);
+    }
+}
+
 // 显示优化概览
 function displayOptimizationOverview(analysis) {
     // 更新概览卡片
@@ -678,6 +708,38 @@ function applyAllModifications() {
             textarea.value = optimizedText;
             showMessage('已应用所有修改建议', 'success');
         }
+    }
+}
+
+// 下载修改后的合同文件
+function downloadOptimizedContract() {
+    if (!currentAnalysis || !currentAnalysis.analysis.contract_optimization) {
+        showMessage('没有可下载的优化后合同！', 'warning');
+        return;
+    }
+    
+    const optimizedText = currentAnalysis.analysis.contract_optimization.optimized_text;
+    if (!optimizedText) {
+        showMessage('优化后的合同内容为空！', 'warning');
+        return;
+    }
+    
+    try {
+        // 创建下载链接
+        const blob = new Blob([optimizedText], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `优化后合同_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showMessage('优化后合同文件下载成功！', 'success');
+    } catch (error) {
+        console.error('下载优化后合同失败:', error);
+        showMessage('下载失败: ' + error.message, 'danger');
     }
 }
 
