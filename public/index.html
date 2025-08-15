@@ -565,6 +565,321 @@
             content: "~";
             color: #ffc107;
         }
+
+        /* 优化概览卡片样式 */
+        .optimization-overview {
+            margin-bottom: 2rem;
+        }
+
+        .overview-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+
+        .overview-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .overview-title {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .overview-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .overview-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .score-card .overview-value {
+            color: #28a745;
+        }
+
+        .risk-card .overview-value {
+            color: #dc3545;
+        }
+
+        .modification-card .overview-value {
+            color: #007bff;
+        }
+
+        .law-card .overview-value {
+            color: #6f42c1;
+        }
+
+        /* 三栏对比展示样式 */
+        .comparison-container {
+            margin-bottom: 2rem;
+        }
+
+        .comparison-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background: #f8f9fa;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #dee2e6;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-header h5 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .panel-body {
+            padding: 1.5rem;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .text-container {
+            height: 400px;
+            overflow-y: auto;
+        }
+
+        .highlighted-text {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .highlighted-text.original-text {
+            border-left: 4px solid #007bff;
+        }
+
+        /* 修改建议列表样式 */
+        .modification-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .modification-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #007bff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modification-item:hover {
+            background: #e9ecef;
+            transform: translateX(2px);
+        }
+
+        .modification-item.active {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+
+        .modification-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .modification-type {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .modification-type.add {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .modification-type.modify {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .modification-type.delete {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .modification-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .modification-reason {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+
+        .modification-law {
+            font-size: 0.8rem;
+            color: #007bff;
+            font-weight: 500;
+        }
+
+        /* 法律条文列表样式 */
+        .law-reference-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .law-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #6f42c1;
+        }
+
+        .law-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: #6f42c1;
+        }
+
+        .law-content {
+            font-size: 0.8rem;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+
+        .law-compliance {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            display: inline-block;
+        }
+
+        .law-compliance.compliant {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .law-compliance.non-compliant {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* 优化后文本区域样式 */
+        .optimized-text-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .optimized-text-section .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .optimized-text-section .section-header h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+
+        .optimized-textarea {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+
+        /* 高亮标记样式 */
+        .highlight-marker {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 3px;
+            padding: 1px 3px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .highlight-marker:hover {
+            background-color: #ffeaa7;
+            transform: scale(1.02);
+        }
+
+        .highlight-marker.highlight-active {
+            background-color: #ffc107;
+            border-color: #e0a800;
+            box-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
+        }
+
+        .highlight-mode .highlight-marker {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        /* 展开详情样式 */
+        .law-reference-list.expanded .law-item {
+            max-height: none;
+        }
+
+        .law-reference-list:not(.expanded) .law-content {
+            max-height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .comparison-container .row {
+                flex-direction: column;
+            }
+            
+            .comparison-container .col-md-4 {
+                margin-bottom: 1rem;
+            }
+            
+            .text-container {
+                height: 300px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -702,34 +1017,120 @@
                         <i class="fas fa-robot"></i> AI合同优化
                     </h3>
                     <div class="content-body">
-                        <div class="ai-modification-container">
-                            <div class="alert alert-info mb-3">
-                                <i class="fas fa-info-circle"></i> 
-                                <strong>智能优化：</strong>AI将直接优化原合同，生成一份更加合规、完整的合同协议，并高亮显示优化的地方和对应的法律条文。
+                        <!-- 顶部概览 -->
+                        <div class="optimization-overview mb-4">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="overview-card score-card">
+                                        <div class="overview-title">合规评分</div>
+                                        <div class="overview-value" id="optimizationScore">0</div>
+                                        <div class="overview-label" id="optimizationLevel">待分析</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="overview-card risk-card">
+                                        <div class="overview-title">风险等级</div>
+                                        <div class="overview-value" id="riskLevel">-</div>
+                                        <div class="overview-label" id="riskCount">0个风险</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="overview-card modification-card">
+                                        <div class="overview-title">修改建议</div>
+                                        <div class="overview-value" id="modificationCount">0</div>
+                                        <div class="overview-label">个优化点</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="overview-card law-card">
+                                        <div class="overview-title">涉及法条</div>
+                                        <div class="overview-value" id="lawCount">0</div>
+                                        <div class="overview-label">个相关法条</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="originalContractText" class="form-label text-success">
-                                    <i class="fas fa-robot"></i> AI优化后的合同内容
-                                </label>
-                                <textarea id="originalContractText" class="form-control" rows="20" readonly 
-                                          placeholder="AI优化后的合同内容将在这里显示，优化的地方会被高亮显示..."></textarea>
+                        </div>
+
+                        <!-- 三栏对比展示 -->
+                        <div class="comparison-container">
+                            <div class="row">
+                                <!-- 左栏：原文展示 -->
+                                <div class="col-md-4">
+                                    <div class="comparison-panel">
+                                        <div class="panel-header">
+                                            <h5><i class="fas fa-file-alt"></i> 原文合同</h5>
+                                            <div class="panel-actions">
+                                                <button class="btn btn-sm btn-outline-primary" onclick="toggleHighlightMode()">
+                                                    <i class="fas fa-highlighter"></i> 高亮模式
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div id="originalTextContainer" class="text-container">
+                                                <div id="originalTextContent" class="highlighted-text original-text">
+                                                    <!-- 原文内容将在这里显示 -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 中栏：修改建议详情 -->
+                                <div class="col-md-4">
+                                    <div class="comparison-panel">
+                                        <div class="panel-header">
+                                            <h5><i class="fas fa-edit"></i> 修改建议</h5>
+                                            <div class="panel-actions">
+                                                <button class="btn btn-sm btn-outline-success" onclick="applyAllModifications()">
+                                                    <i class="fas fa-check"></i> 应用全部
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div id="modificationList" class="modification-list">
+                                                <!-- 修改建议列表将在这里显示 -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 右栏：法律条文对照 -->
+                                <div class="col-md-4">
+                                    <div class="comparison-panel">
+                                        <div class="panel-header">
+                                            <h5><i class="fas fa-gavel"></i> 法律依据</h5>
+                                            <div class="panel-actions">
+                                                <button class="btn btn-sm btn-outline-info" onclick="toggleLawDetails()">
+                                                    <i class="fas fa-expand"></i> 展开详情
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="panel-body">
+                                            <div id="lawReferenceList" class="law-reference-list">
+                                                <!-- 法律条文对照将在这里显示 -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            
-                            <!-- AI修改详情 -->
-                            <div class="ai-modification-details mt-4" id="aiModificationDetails" style="display: none;">
-                                <h5 class="text-primary mb-3">
-                                    <i class="fas fa-gavel"></i> 优化详情与法律依据
-                                </h5>
-                                <div id="aiModificationList"></div>
+                        </div>
+
+                        <!-- 优化后完整文本 -->
+                        <div class="optimized-text-section mt-4">
+                            <div class="section-header">
+                                <h5><i class="fas fa-file-check"></i> 优化后完整合同</h5>
+                                <div class="header-actions">
+                                    <button class="btn btn-success me-2" onclick="applyAIModifications(event)" id="applyAIBtn" style="display: none;">
+                                        <i class="fas fa-check"></i> 确认优化
+                                    </button>
+                                    <button class="btn btn-outline-primary" onclick="downloadAIModifiedContract()" id="downloadAIBtn" style="display: none;">
+                                        <i class="fas fa-download"></i> 下载文件
+                                    </button>
+                                </div>
                             </div>
-                            
-                            <div class="text-center mt-3">
-                                <button class="btn btn-success me-2" onclick="applyAIModifications(event)" id="applyAIBtn" style="display: none;">
-                                    <i class="fas fa-check"></i> 确认优化
-                                </button>
-                                <button class="btn btn-outline-primary" onclick="downloadAIModifiedContract()" id="downloadAIBtn" style="display: none;">
-                                    <i class="fas fa-download"></i> 下载优化后文件
-                                </button>
+                            <div class="optimized-text-container">
+                                <textarea id="originalContractText" class="form-control optimized-textarea" rows="15" readonly 
+                                          placeholder="AI优化后的合同内容将在这里显示..."></textarea>
                             </div>
                         </div>
                     </div>

@@ -273,8 +273,11 @@ function displayResults(result) {
     // 显示改进建议
     displaySuggestions(analysis.suggestions);
     
-    // 显示合同内容
-    displayContractText(result.contract_text || '');
+    // 显示优化概览
+    displayOptimizationOverview(analysis);
+    
+    // 显示三栏对比
+    displayComparisonPanels(result.contract_text || '', analysis);
     
     // 自动生成AI修改建议并显示
     generateAndDisplayModifications(result.contract_text || '', analysis);
@@ -504,6 +507,177 @@ function displayModificationResult(result, originalText) {
     // 显示修改总结
     if (result.summary) {
         showMessage(`合同优化完成：${result.summary}`, 'success');
+    }
+}
+
+// 显示优化概览
+function displayOptimizationOverview(analysis) {
+    // 更新概览卡片
+    document.getElementById('optimizationScore').textContent = analysis.compliance_score;
+    
+    // 设置合规等级
+    let optimizationLevel = '';
+    if (analysis.compliance_score >= 90) {
+        optimizationLevel = '优秀';
+    } else if (analysis.compliance_score >= 70) {
+        optimizationLevel = '良好';
+    } else if (analysis.compliance_score >= 50) {
+        optimizationLevel = '一般';
+    } else {
+        optimizationLevel = '较差';
+    }
+    document.getElementById('optimizationLevel').textContent = optimizationLevel;
+    
+    // 设置风险等级
+    const highRiskCount = analysis.risk_factors.filter(r => r.severity === 'high').length;
+    let riskLevel = '-';
+    if (highRiskCount > 0) {
+        riskLevel = '高风险';
+    } else if (analysis.risk_factors.length > 0) {
+        riskLevel = '中风险';
+    } else {
+        riskLevel = '低风险';
+    }
+    document.getElementById('riskLevel').textContent = riskLevel;
+    document.getElementById('riskCount').textContent = `${analysis.risk_factors.length}个风险`;
+    
+    // 设置修改建议数量
+    const modificationCount = analysis.contract_optimization?.modifications?.length || 0;
+    document.getElementById('modificationCount').textContent = modificationCount;
+    
+    // 设置法条数量
+    const lawCount = analysis.matched_articles?.length || 0;
+    document.getElementById('lawCount').textContent = lawCount;
+}
+
+// 显示三栏对比面板
+function displayComparisonPanels(originalText, analysis) {
+    // 显示原文
+    displayOriginalText(originalText, analysis);
+    
+    // 显示修改建议
+    displayModificationList(analysis);
+    
+    // 显示法律条文
+    displayLawReferenceList(analysis);
+}
+
+// 显示原文
+function displayOriginalText(originalText, analysis) {
+    const originalTextContent = document.getElementById('originalTextContent');
+    if (originalTextContent) {
+        // 创建带有高亮的原文
+        let highlightedText = originalText;
+        
+        // 如果有修改建议，在原文中标记位置
+        if (analysis.contract_optimization?.modifications) {
+            analysis.contract_optimization.modifications.forEach((mod, index) => {
+                if (mod.original_text && mod.original_text.trim()) {
+                    const marker = `<span class="highlight-marker" data-modification="${index}">${escapeHtml(mod.original_text)}</span>`;
+                    highlightedText = highlightedText.replace(mod.original_text, marker);
+                }
+            });
+        }
+        
+        originalTextContent.innerHTML = highlightedText.replace(/\n/g, '<br>');
+    }
+}
+
+// 显示修改建议列表
+function displayModificationList(analysis) {
+    const modificationList = document.getElementById('modificationList');
+    if (!modificationList || !analysis.contract_optimization?.modifications) return;
+    
+    const modifications = analysis.contract_optimization.modifications;
+    const html = modifications.map((mod, index) => `
+        <div class="modification-item" onclick="highlightModification(${index})" data-index="${index}">
+            <div class="modification-header">
+                <span class="modification-type ${mod.type}">${getModificationTypeText(mod.type)}</span>
+                <small>${mod.position}</small>
+            </div>
+            <div class="modification-title">${escapeHtml(mod.original_text || '新增内容')}</div>
+            <div class="modification-reason">${escapeHtml(mod.reason)}</div>
+            <div class="modification-law">${escapeHtml(mod.related_article)}</div>
+        </div>
+    `).join('');
+    
+    modificationList.innerHTML = html;
+}
+
+// 显示法律条文列表
+function displayLawReferenceList(analysis) {
+    const lawReferenceList = document.getElementById('lawReferenceList');
+    if (!lawReferenceList || !analysis.matched_articles) return;
+    
+    const html = analysis.matched_articles.map(law => `
+        <div class="law-item">
+            <div class="law-title">${escapeHtml(law.article)}</div>
+            <div class="law-content">${escapeHtml(law.original_text)}</div>
+            <span class="law-compliance ${law.compliance ? 'compliant' : 'non-compliant'}">
+                ${law.compliance ? '符合要求' : '需要关注'}
+            </span>
+        </div>
+    `).join('');
+    
+    lawReferenceList.innerHTML = html;
+}
+
+// 获取修改类型文本
+function getModificationTypeText(type) {
+    switch (type) {
+        case 'add': return '新增';
+        case 'modify': return '修改';
+        case 'delete': return '删除';
+        default: return type;
+    }
+}
+
+// 高亮指定修改
+function highlightModification(index) {
+    // 移除所有活动状态
+    document.querySelectorAll('.modification-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // 添加活动状态到选中的修改
+    const selectedItem = document.querySelector(`[data-index="${index}"]`);
+    if (selectedItem) {
+        selectedItem.classList.add('active');
+    }
+    
+    // 高亮原文中对应的位置
+    document.querySelectorAll('.highlight-marker').forEach(marker => {
+        marker.classList.remove('highlight-active');
+    });
+    
+    const targetMarker = document.querySelector(`[data-modification="${index}"]`);
+    if (targetMarker) {
+        targetMarker.classList.add('highlight-active');
+        targetMarker.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+// 切换高亮模式
+function toggleHighlightMode() {
+    const container = document.getElementById('originalTextContainer');
+    container.classList.toggle('highlight-mode');
+}
+
+// 切换法律详情
+function toggleLawDetails() {
+    const list = document.getElementById('lawReferenceList');
+    list.classList.toggle('expanded');
+}
+
+// 应用所有修改
+function applyAllModifications() {
+    if (currentAnalysis && currentAnalysis.analysis.contract_optimization) {
+        const optimizedText = currentAnalysis.analysis.contract_optimization.optimized_text;
+        const textarea = document.getElementById('originalContractText');
+        if (textarea && optimizedText) {
+            textarea.value = optimizedText;
+            showMessage('已应用所有修改建议', 'success');
+        }
     }
 }
 
