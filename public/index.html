@@ -15,6 +15,8 @@
             --warning-color: #f39c12;
             --danger-color: #e74c3c;
             --light-bg: #f8f9fa;
+            --border-radius: 12px;
+            --shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         body {
@@ -51,9 +53,57 @@
             font-size: 1.1rem;
         }
 
+        /* 法律选择区域样式 */
+        .law-selection {
+            background: var(--light-bg);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            margin: 20px;
+            border: 2px solid #e9ecef;
+        }
+
+        .law-selection h4 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .law-selector {
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .law-selector:hover {
+            border-color: var(--secondary-color);
+            box-shadow: var(--shadow);
+        }
+
+        .law-selector label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        .law-selector select {
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .law-selector select:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25);
+        }
+
         .upload-area {
             border: 3px dashed #ddd;
-            border-radius: 15px;
+            border-radius: var(--border-radius);
             padding: 60px 20px;
             margin: 20px;
             transition: all 0.3s ease;
@@ -81,7 +131,7 @@
         .score-card {
             background: linear-gradient(135deg, var(--success-color), #2ecc71);
             color: white;
-            border-radius: 15px;
+            border-radius: var(--border-radius);
             padding: 30px;
             text-align: center;
             margin: 20px;
@@ -93,34 +143,23 @@
             margin: 10px 0;
         }
 
-        .stats-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            text-align: center;
+        .content-section {
+            border: 1px solid #dee2e6;
+            border-radius: var(--border-radius);
+            margin: 20px 0;
+            overflow: hidden;
         }
 
-        .stats-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            color: var(--secondary-color);
+        .section-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            margin: 0;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
         }
 
-        .history-item {
-            background: white;
-            border-radius: 10px;
+        .content-body {
             padding: 20px;
-            margin: 10px 0;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .history-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
         }
 
         .btn-custom {
@@ -154,12 +193,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin: 20px 0;
-        }
-
         .ai-badge {
             background: linear-gradient(45deg, #ff6b6b, #ee5a24);
             color: white;
@@ -187,686 +220,6 @@
             background: #f8d7da;
         }
 
-        .contract-editor {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 20px 0;
-        }
-
-        .contract-editor textarea {
-            width: 100%;
-            min-height: 300px;
-            border: 1px solid #ced4da;
-            border-radius: 5px;
-            padding: 15px;
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        .section-header {
-            background: var(--primary-color);
-            color: white;
-            padding: 15px 20px;
-            margin: 0;
-            border-radius: 10px 10px 0 0;
-        }
-
-        .content-section {
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            margin: 20px 0;
-            overflow: hidden;
-        }
-
-        .content-body {
-            padding: 20px;
-        }
-
-        .floating-stats {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            z-index: 1000;
-            max-width: 300px;
-        }
-
-        .floating-stats h5 {
-            margin-bottom: 15px;
-            color: var(--primary-color);
-        }
-
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-            margin: 8px 0;
-            padding: 5px 0;
-            border-bottom: 1px solid #eee;
-        }
-
-        .stat-item:last-child {
-            border-bottom: none;
-        }
-
-        .regulation-comparison {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 15px 0;
-        }
-
-        .regulation-comparison .card {
-            border: none;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .regulation-comparison .card-header {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border-radius: 8px 8px 0 0;
-        }
-
-        .regulation-comparison .bg-light {
-            background: #e9ecef !important;
-            border-left: 4px solid #007bff;
-        }
-
-        .regulation-comparison .text-primary {
-            color: #007bff !important;
-        }
-
-        .regulation-comparison .text-success {
-            color: #28a745 !important;
-        }
-
-        .regulation-comparison .text-info {
-            color: #17a2b8 !important;
-        }
-
-        .ai-loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #3498db;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        .contract-editor textarea {
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.4;
-            resize: vertical;
-        }
-        
-        .modification-details {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-        }
-        
-        .modification-item {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 10px 0;
-            border-left: 4px solid #007bff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .modification-item h6 {
-            color: #007bff;
-            margin-bottom: 10px;
-        }
-        
-        .modification-item .badge {
-            font-size: 0.8rem;
-        }
-        
-        .text-diff {
-            background: #fff3cd;
-            padding: 8px;
-            border-radius: 4px;
-            margin: 5px 0;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-        }
-        
-        /* AI修改建议样式 */
-        .ai-modification-container {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 25px;
-        }
-        
-        .ai-modification-details {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        
-        .ai-modification-item {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 15px 0;
-            border-left: 4px solid #007bff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        
-        .ai-modification-item h6 {
-            color: #007bff;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-        
-        .text-comparison {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 10px 0;
-            border: 1px solid #dee2e6;
-        }
-        
-        .text-original {
-            background: #ffe6e6;
-            border-left: 3px solid #dc3545;
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-        }
-        
-        .text-suggested {
-            background: #e6ffe6;
-            border-left: 3px solid #28a745;
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-        }
-        
-        .text-reason {
-            background: #e6f3ff;
-            border-left: 3px solid #17a2b8;
-            padding: 10px;
-            margin: 8px 0;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        
-        .modification-type-badge {
-            font-size: 0.9rem;
-            padding: 6px 12px;
-            border-radius: 20px;
-        }
-        
-        /* 历史详情弹框样式 */
-        .modal-xl {
-            max-width: 90%;
-        }
-        
-        .contract-preview textarea {
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            line-height: 1.4;
-            resize: none;
-        }
-        
-        .modal-body .card {
-            border: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 15px;
-        }
-        
-        .modal-body .card-header {
-            border-radius: 8px 8px 0 0;
-            font-weight: 600;
-        }
-        
-        .modal-body .display-4 {
-            font-size: 3rem;
-            font-weight: bold;
-        }
-        
-        .modal-body .alert {
-            border: none;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-        
-        .modal-body .alert:last-child {
-            margin-bottom: 0;
-        }
-        
-        /* 高亮文本样式 */
-        .highlighted-text {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 15px;
-            min-height: 300px;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            overflow-y: auto;
-        }
-        
-        .highlighted-text.original-text {
-            border-left: 4px solid #dc3545;
-        }
-        
-        .highlighted-text.modified-text {
-            border-left: 4px solid #28a745;
-        }
-        
-        .highlight-warning {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 4px;
-            padding: 2px 4px;
-            margin: 1px 0;
-            display: inline-block;
-            font-weight: bold;
-        }
-        
-        .highlight-success {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 4px;
-            padding: 2px 4px;
-            margin: 1px 0;
-            display: inline-block;
-            font-weight: bold;
-        }
-        
-        .highlight-danger {
-            background-color: #f8d7da;
-            border: 1px solid #f5c6cb;
-            border-radius: 4px;
-            padding: 2px 4px;
-            margin: 1px 0;
-            display: inline-block;
-            font-weight: bold;
-        }
-        
-        .highlight-info {
-            background-color: #d1ecf1;
-            border: 1px solid #bee5eb;
-            border-radius: 4px;
-            padding: 2px 4px;
-            margin: 1px 0;
-            display: inline-block;
-            font-weight: bold;
-        }
-        
-        /* 切换按钮样式 */
-        .toggle-text-btn {
-            margin-bottom: 10px;
-            font-size: 12px;
-        }
-        
-        /* 差异对比样式 */
-        .diff-container {
-            position: relative;
-        }
-        
-        .diff-line {
-            padding: 2px 0;
-            border-radius: 3px;
-        }
-        
-        .diff-line.added {
-            background-color: #d4edda;
-            border-left: 3px solid #28a745;
-        }
-        
-        .diff-line.removed {
-            background-color: #f8d7da;
-            border-left: 3px solid #dc3545;
-        }
-        
-        .diff-line.modified {
-            background-color: #fff3cd;
-            border-left: 3px solid #ffc107;
-        }
-        
-        .diff-marker {
-            display: inline-block;
-            width: 20px;
-            text-align: center;
-            font-weight: bold;
-            margin-right: 10px;
-        }
-        
-        .diff-marker.added::before {
-            content: "+";
-            color: #28a745;
-        }
-        
-        .diff-marker.removed::before {
-            content: "-";
-            color: #dc3545;
-        }
-        
-        .diff-marker.modified::before {
-            content: "~";
-            color: #ffc107;
-        }
-
-        /* 优化概览卡片样式 */
-        .optimization-overview {
-            margin-bottom: 2rem;
-        }
-
-        .overview-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            text-align: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-            height: 100%;
-        }
-
-        .overview-card:hover {
-            transform: translateY(-2px);
-        }
-
-        .overview-title {
-            font-size: 0.9rem;
-            color: #6c757d;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-
-        .overview-value {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-        }
-
-        .overview-label {
-            font-size: 0.8rem;
-            color: #6c757d;
-        }
-
-        .score-card .overview-value {
-            color: #28a745;
-        }
-
-        .risk-card .overview-value {
-            color: #dc3545;
-        }
-
-        .modification-card .overview-value {
-            color: #007bff;
-        }
-
-        .law-card .overview-value {
-            color: #6f42c1;
-        }
-
-        /* 三栏对比展示样式 */
-        .comparison-container {
-            margin-bottom: 2rem;
-        }
-
-        .comparison-panel {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .panel-header {
-            background: #f8f9fa;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid #dee2e6;
-            border-radius: 12px 12px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .panel-header h5 {
-            margin: 0;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .panel-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .panel-body {
-            padding: 1.5rem;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        .text-container {
-            height: 400px;
-            overflow-y: auto;
-        }
-
-        .highlighted-text {
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            white-space: pre-wrap;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-        }
-
-        .highlighted-text.original-text {
-            border-left: 4px solid #007bff;
-        }
-
-        /* 修改建议列表样式 */
-        .modification-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .modification-item {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid #007bff;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .modification-item:hover {
-            background: #e9ecef;
-            transform: translateX(2px);
-        }
-
-        .modification-item.active {
-            background: #d4edda;
-            border-left-color: #28a745;
-        }
-
-        .modification-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .modification-type {
-            font-size: 0.8rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 12px;
-            font-weight: 500;
-        }
-
-        .modification-type.add {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .modification-type.modify {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .modification-type.delete {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .modification-title {
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .modification-reason {
-            font-size: 0.8rem;
-            color: #6c757d;
-            margin-bottom: 0.5rem;
-        }
-
-        .modification-law {
-            font-size: 0.8rem;
-            color: #007bff;
-            font-weight: 500;
-        }
-
-        /* 法律条文列表样式 */
-        .law-reference-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .law-item {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid #6f42c1;
-        }
-
-        .law-title {
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-            color: #6f42c1;
-        }
-
-        .law-content {
-            font-size: 0.8rem;
-            color: #495057;
-            margin-bottom: 0.5rem;
-            line-height: 1.5;
-        }
-
-        .law-compliance {
-            font-size: 0.8rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 12px;
-            display: inline-block;
-        }
-
-        .law-compliance.compliant {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .law-compliance.non-compliant {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        /* 优化后文本区域样式 */
-        .optimized-text-section {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-
-        .optimized-text-section .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .optimized-text-section .section-header h5 {
-            margin: 0;
-            font-weight: 600;
-        }
-
-        .optimized-textarea {
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-        }
-
-        /* 高亮标记样式 */
-        .highlight-marker {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 3px;
-            padding: 1px 3px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .highlight-marker:hover {
-            background-color: #ffeaa7;
-            transform: scale(1.02);
-        }
-
-        .highlight-marker.highlight-active {
-            background-color: #ffc107;
-            border-color: #e0a800;
-            box-shadow: 0 0 8px rgba(255, 193, 7, 0.5);
-        }
-
-        .highlight-mode .highlight-marker {
-            background-color: #d4edda;
-            border-color: #c3e6cb;
-        }
-
-        /* 展开详情样式 */
-        .law-reference-list.expanded .law-item {
-            max-height: none;
-        }
-
-        .law-reference-list:not(.expanded) .law-content {
-            max-height: 60px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-        }
-
-        /* 并排对比布局样式 */
         .comparison-container {
             margin: 2rem 0;
         }
@@ -874,40 +227,29 @@
         .comparison-panel {
             background: white;
             border: 1px solid #dee2e6;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
             height: 100%;
             display: flex;
             flex-direction: column;
         }
 
-        .comparison-panel .panel-header {
+        .panel-header {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             padding: 1rem 1.5rem;
-            border-radius: 12px 12px 0 0;
+            border-radius: var(--border-radius) var(--border-radius) 0 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .comparison-panel .panel-header h5,
-        .comparison-panel .panel-header h6 {
+        .panel-header h5, .panel-header h6 {
             margin: 0;
             font-weight: 600;
-            font-size: 1rem;
         }
 
-        .comparison-panel .panel-header h6 {
-            font-size: 0.9rem;
-        }
-
-        .comparison-panel .panel-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .comparison-panel .panel-body {
+        .panel-body {
             padding: 1.5rem;
             flex: 1;
             overflow: hidden;
@@ -938,41 +280,6 @@
             border-left: 4px solid #28a745;
         }
 
-        /* 紧凑的侧边栏样式 */
-        .modification-list-compact {
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        .law-reference-list-compact {
-            max-height: 200px;
-            overflow-y: auto;
-        }
-
-        /* 合并侧边栏样式 */
-        .sidebar-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .sidebar-section:last-child {
-            margin-bottom: 0;
-        }
-
-        .sidebar-subtitle {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-            padding-bottom: 0.25rem;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .sidebar-section .modification-list-compact,
-        .sidebar-section .law-reference-list-compact {
-            max-height: 150px;
-        }
-
-        /* 合并的修改建议和法律依据样式 */
         .combined-modification-list {
             max-height: 400px;
             overflow-y: auto;
@@ -992,7 +299,7 @@
             background: #e9ecef;
             border-color: #adb5bd;
             transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: var(--shadow);
         }
 
         .combined-modification-item.active {
@@ -1001,21 +308,7 @@
             border-color: #0056b3;
         }
 
-        .combined-modification-item.active .modification-type {
-            background-color: rgba(255,255,255,0.2);
-            color: white;
-            border-color: rgba(255,255,255,0.3);
-        }
-
-        .combined-modification-item.active .modification-text {
-            color: white;
-        }
-
-        .combined-modification-item.active .law-reference {
-            color: rgba(255,255,255,0.9);
-        }
-
-        .combined-modification-item .modification-type {
+        .modification-type {
             font-size: 0.7rem;
             padding: 0.2rem 0.4rem;
             border-radius: 3px;
@@ -1024,162 +317,93 @@
             font-weight: 600;
         }
 
-        .combined-modification-item .modification-text {
-            font-size: 0.75rem;
-            line-height: 1.4;
-            margin-bottom: 0.5rem;
-            word-break: break-word;
-            color: #495057;
-        }
-
-        .combined-modification-item .law-reference {
-            font-size: 0.7rem;
-            color: #6c757d;
-            font-style: italic;
-            padding-top: 0.5rem;
-            border-top: 1px solid #dee2e6;
-        }
-
-        .combined-modification-item .law-reference .law-title {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.25rem;
-        }
-
-        .combined-modification-item .law-reference .law-content {
-            line-height: 1.3;
-            max-height: 60px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            transition: max-height 0.3s ease;
-        }
-
-        .combined-modification-list.expanded .combined-modification-item .law-reference .law-content {
-            max-height: none;
-            overflow: visible;
-        }
-
-        .modification-list-compact .modification-item {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.8rem;
-        }
-
-        .modification-list-compact .modification-item:hover {
-            background: #e9ecef;
-            border-color: #adb5bd;
-        }
-
-        .modification-list-compact .modification-item.active {
-            background: #007bff;
-            color: white;
-            border-color: #0056b3;
-        }
-
-        .modification-list-compact .modification-type {
-            font-size: 0.7rem;
-            padding: 0.2rem 0.4rem;
-            border-radius: 3px;
-            margin-bottom: 0.3rem;
-            display: inline-block;
-            font-weight: 600;
-        }
-
-        .modification-list-compact .modification-type.add {
+        .modification-type.add {
             background-color: #d4edda;
             color: #155724;
-            border: 1px solid #c3e6cb;
         }
 
-        .modification-list-compact .modification-type.modify {
+        .modification-type.modify {
             background-color: #fff3cd;
             color: #856404;
-            border: 1px solid #ffeaa7;
         }
 
-        .modification-list-compact .modification-type.delete {
+        .modification-type.delete {
             background-color: #f8d7da;
             color: #721c24;
-            border: 1px solid #f5c6cb;
         }
 
-        .modification-list-compact .modification-type.warning {
-            background-color: #ffeaa7;
-            color: #856404;
-            border: 1px solid #fdcb6e;
+        .floating-stats {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 1000;
+            max-width: 300px;
         }
 
-        .modification-list-compact .modification-type.success {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+        .optimization-overview {
+            margin-bottom: 2rem;
         }
 
-        .modification-list-compact .modification-type.info {
-            background-color: #e2e3e5;
-            color: #383d41;
-            border: 1px solid #d6d8db;
+        .overview-card {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease;
+            height: 100%;
         }
 
-        .modification-list-compact .modification-text {
-            font-size: 0.75rem;
-            line-height: 1.3;
-            margin-bottom: 0.3rem;
-            word-break: break-word;
+        .overview-card:hover {
+            transform: translateY(-2px);
         }
 
-        .modification-list-compact .modification-reason {
-            font-size: 0.7rem;
-            color: #6c757d;
-            font-style: italic;
+        .overview-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
         }
 
-        .law-reference-list-compact .law-item {
+        .score-card .overview-value {
+            color: #28a745;
+        }
+
+        .risk-card .overview-value {
+            color: #dc3545;
+        }
+
+        .modification-card .overview-value {
+            color: #007bff;
+        }
+
+        .law-card .overview-value {
+            color: #6f42c1;
+        }
+
+        /* 翻译相关样式 */
+        .translated {
+            border-left: 4px solid #17a2b8 !important;
+            background: #e6f3ff !important;
+        }
+        
+        .translation-controls {
             background: #f8f9fa;
             border: 1px solid #dee2e6;
-            border-radius: 6px;
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-            font-size: 0.8rem;
+            border-radius: var(--border-radius);
+            padding: 15px;
+            margin-bottom: 15px;
         }
-
-        .law-reference-list-compact .law-title {
-            font-weight: 600;
-            font-size: 0.75rem;
-            margin-bottom: 0.3rem;
-            color: #495057;
+        
+        .language-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
         }
-
-        .law-reference-list-compact .law-content {
-            font-size: 0.7rem;
-            line-height: 1.3;
-            color: #6c757d;
-            max-height: 60px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-        }
-
-        .law-reference-list-compact.expanded .law-content {
-            max-height: none;
-        }
-
-        /* 同步滚动样式 */
-        .text-container.sync-scroll {
-            scroll-behavior: smooth;
-        }
-
-        /* 响应式调整 */
+        
         @media (max-width: 768px) {
             .comparison-container .row {
                 flex-direction: column;
@@ -1193,11 +417,6 @@
             .text-container {
                 height: 300px;
             }
-            
-            .modification-list-compact,
-            .law-reference-list-compact {
-                max-height: 150px;
-            }
         }
     </style>
 </head>
@@ -1206,7 +425,7 @@
         <!-- 头部 -->
         <div class="header">
             <h1><i class="fas fa-balance-scale"></i> 法律合同合规AI分析平台</h1>
-            <p>基于中国法律法规的智能合规分析 - 一体化界面</p>
+            <p>国际合同双法律体系合规分析 - 确保合同在两国都具有法律效力</p>
         </div>
 
         <!-- 浮动统计面板 -->
@@ -1217,6 +436,47 @@
 
         <!-- 主要内容区域 -->
         <div class="container-fluid p-4">
+            <!-- 法律选择区域 -->
+            <div class="law-selection">
+                <h4><i class="fas fa-globe"></i> 选择合同适用的法律体系</h4>
+                <p class="text-center text-muted mb-3">此合同需要同时符合两个国家的法律要求，确保在两国都具有法律效力</p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="law-selector">
+                            <label for="primaryLaw"><i class="fas fa-flag"></i> 甲方国家法律体系</label>
+                            <select id="primaryLaw" class="form-select">
+                                <option value="">请选择甲方国家法律</option>
+                                <option value="china">中华人民共和国法律</option>
+                                <option value="usa">美国法律 (U.S. Law)</option>
+                                <option value="eu">欧盟法律 (EU Law)</option>
+                                <option value="uk">英国法律 (UK Law)</option>
+                                <option value="japan">日本法律 (Japanese Law)</option>
+                                <option value="singapore">新加坡法律 (Singapore Law)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="law-selector">
+                            <label for="secondaryLaw"><i class="fas fa-balance-scale"></i> 乙方国家法律体系</label>
+                            <select id="secondaryLaw" class="form-select">
+                                <option value="">请选择乙方国家法律</option>
+                                <option value="china">中华人民共和国法律</option>
+                                <option value="usa">美国法律 (U.S. Law)</option>
+                                <option value="eu">欧盟法律 (EU Law)</option>
+                                <option value="uk">英国法律 (UK Law)</option>
+                                <option value="japan">日本法律 (Japanese Law)</option>
+                                <option value="singapore">新加坡法律 (Singapore Law)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <button class="btn btn-custom" onclick="updateLawSelection()">
+                        <i class="fas fa-check"></i> 确认法律选择
+                    </button>
+                </div>
+            </div>
+
             <!-- 文件上传区域 -->
             <div class="content-section" id="uploadSection">
                 <h3 class="section-header">
@@ -1228,7 +488,7 @@
                             <i class="fas fa-cloud-upload-alt"></i>
                         </div>
                         <h4>拖拽文件到此处或点击选择</h4>
-                        <p class="text-muted">支持对外贸易相关合同分析</p>
+                        <p class="text-muted">支持国际合同双法律体系合规分析</p>
                         <input type="file" id="fileInput" style="display: none;" accept=".pdf,.docx,.doc,.txt">
                         <button class="btn btn-custom" onclick="document.getElementById('fileInput').click()">
                             <i class="fas fa-folder-open"></i> 选择文件
@@ -1245,7 +505,7 @@
                         </div>
                         <div class="text-center">
                             <button class="btn btn-custom btn-lg" onclick="analyzeContract()">
-                                <i class="fas fa-robot"></i> AI智能分析
+                                <i class="fas fa-robot"></i> AI双法律体系合规分析
                             </button>
                         </div>
                     </div>
@@ -1260,7 +520,7 @@
                 <div class="content-body text-center">
                     <div class="loading-spinner mb-3"></div>
                     <h4>AI正在分析合同...</h4>
-                    <p class="text-muted">正在提取文本内容并进行智能合规分析</p>
+                    <p class="text-muted">正在提取文本内容并进行双法律体系合规分析</p>
                     <div class="progress">
                         <div class="progress-bar progress-bar-striped progress-bar-animated" 
                              role="progressbar" style="width: 100%"></div>
@@ -1400,12 +660,37 @@
                                         <div class="panel-header">
                                             <h5><i class="fas fa-file-check"></i> 修改后合同</h5>
                                             <div class="panel-actions">
+                                                <button class="btn btn-sm btn-outline-info me-1" onclick="translateContract()">
+                                                    <i class="fas fa-language"></i> 翻译
+                                                </button>
                                                 <button class="btn btn-sm btn-outline-success" onclick="downloadOptimizedContract()">
                                                     <i class="fas fa-download"></i> 下载合同
                                                 </button>
                                             </div>
                                         </div>
                                         <div class="panel-body">
+                                            <!-- 语言选择 -->
+                                            <div class="mb-3" id="translationControls" style="display: none;">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label">目标语言:</label>
+                                                        <select id="targetLanguage" class="form-select form-select-sm">
+                                                            <option value="en">英语 (English)</option>
+                                                            <option value="ja">日语 (日本語)</option>
+                                                            <option value="ko">韩语 (한국어)</option>
+                                                            <option value="de">德语 (Deutsch)</option>
+                                                            <option value="fr">法语 (Français)</option>
+                                                            <option value="es">西班牙语 (Español)</option>
+                                                            <option value="ru">俄语 (Русский)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <button class="btn btn-primary btn-sm" onclick="performTranslation()">
+                                                            <i class="fas fa-sync-alt"></i> 执行翻译
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
                                             <div id="modifiedTextContainer" class="text-container">
                                                 <div id="modifiedTextContent" class="highlighted-text modified-text">
                                                     <!-- 修改后的内容将在这里显示 -->
@@ -1471,7 +756,6 @@
                         <button class="btn btn-custom" onclick="viewFullHistory()">
                             <i class="fas fa-history"></i> 查看完整分析历史
                         </button>
-                    </div>
                 </div>
             </div>
             </div>

@@ -2,12 +2,17 @@
 let selectedFile = null;
 let currentAnalysis = null;
 let originalContractText = '';
+let selectedPrimaryLaw = '';
+let selectedSecondaryLaw = '';
+let translatedContent = {};
+let currentLanguage = 'zh';
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
     initializeFileInput();
     loadHistory();
     loadStatistics();
+    initializeLawSelection();
     
     // 添加页面卸载时的清理
     window.addEventListener('beforeunload', function() {
@@ -115,6 +120,283 @@ function cleanupAllModals() {
     }
 }
 
+// 初始化法律选择
+function initializeLawSelection() {
+    // 设置默认选择（中国法律）
+    document.getElementById('primaryLaw').value = 'china';
+    selectedPrimaryLaw = 'china';
+    
+    // 添加选择变化事件监听
+    document.getElementById('primaryLaw').addEventListener('change', function() {
+        const primaryLaw = this.value;
+        if (primaryLaw) {
+            selectedPrimaryLaw = primaryLaw;
+            // 如果选择了相同的对比法律，清空对比选择
+            if (selectedSecondaryLaw === primaryLaw) {
+                document.getElementById('secondaryLaw').value = '';
+                selectedSecondaryLaw = '';
+            }
+        }
+    });
+    
+    document.getElementById('secondaryLaw').addEventListener('change', function() {
+        selectedSecondaryLaw = this.value;
+    });
+    
+    // 初始化显示
+    updateLawSelectionDisplay();
+}
+
+// 法律选择功能
+function updateLawSelection() {
+    const primaryLaw = document.getElementById('primaryLaw').value;
+    const secondaryLaw = document.getElementById('secondaryLaw').value;
+    
+    if (!primaryLaw) {
+        showMessage('请选择主要法律体系！', 'warning');
+        return;
+    }
+    
+    // 检查是否选择了相同的法律体系
+    if (secondaryLaw && primaryLaw === secondaryLaw) {
+        showMessage('主要法律体系和对比法律体系不能相同！', 'warning');
+        return;
+    }
+    
+    selectedPrimaryLaw = primaryLaw;
+    selectedSecondaryLaw = secondaryLaw;
+    
+    // 显示选择结果
+    let message = `已选择甲方国家法律: ${getLawDisplayName(primaryLaw)}`;
+    if (secondaryLaw) {
+        message += `，乙方国家法律: ${getLawDisplayName(secondaryLaw)}`;
+    }
+    message += '\n\nAI将确保合同同时符合两个国家的法律要求，在两国都具有法律效力。';
+    
+    showMessage(message, 'success');
+    
+    // 更新UI显示
+    updateLawSelectionDisplay();
+}
+
+// 获取法律体系显示名称
+function getLawDisplayName(lawCode) {
+    const lawNames = {
+        'china': '中华人民共和国法律',
+        'usa': '美国法律 (U.S. Law)',
+        'eu': '欧盟法律 (EU Law)',
+        'uk': '英国法律 (UK Law)',
+        'japan': '日本法律 (Japanese Law)',
+        'singapore': '新加坡法律 (Singapore Law)'
+    };
+    return lawNames[lawCode] || lawCode;
+}
+
+// 更新法律选择显示
+function updateLawSelectionDisplay() {
+    const primarySelect = document.getElementById('primaryLaw');
+    const secondarySelect = document.getElementById('secondaryLaw');
+    
+    // 添加选中状态的视觉反馈
+    if (selectedPrimaryLaw) {
+        primarySelect.classList.add('is-valid');
+        primarySelect.classList.remove('is-invalid');
+    }
+    
+    if (selectedSecondaryLaw) {
+        secondarySelect.classList.add('is-valid');
+        secondarySelect.classList.remove('is-invalid');
+    }
+}
+
+// 翻译功能
+function translateContract() {
+    const translationControls = document.getElementById('translationControls');
+    if (translationControls.style.display === 'none') {
+        translationControls.style.display = 'block';
+        // 根据选择的法律体系设置默认目标语言
+        setDefaultTargetLanguage();
+    } else {
+        translationControls.style.display = 'none';
+    }
+}
+
+// 设置默认目标语言
+function setDefaultTargetLanguage() {
+    const targetLanguage = document.getElementById('targetLanguage');
+    
+    // 根据选择的法律体系设置对应的语言
+    const languageMap = {
+        'usa': 'en',
+        'uk': 'en',
+        'eu': 'en', // 欧盟主要使用英语
+        'japan': 'ja',
+        'singapore': 'en', // 新加坡主要使用英语
+        'china': 'en' // 中国法律翻译成英语
+    };
+    
+    if (selectedPrimaryLaw && languageMap[selectedPrimaryLaw]) {
+        targetLanguage.value = languageMap[selectedPrimaryLaw];
+    }
+}
+
+// 执行翻译
+async function performTranslation() {
+    const targetLanguage = document.getElementById('targetLanguage').value;
+    if (!targetLanguage) {
+        showMessage('请选择目标语言！', 'warning');
+        return;
+    }
+    
+    try {
+        showMessage('正在翻译...', 'info');
+        
+        // 获取需要翻译的内容
+        const originalText = document.getElementById('originalTextContent').textContent;
+        const modifiedText = document.getElementById('modifiedTextContent').textContent;
+        const modifications = getModificationSuggestions();
+        
+        // 创建翻译请求
+        const translationData = {
+            originalText: originalText,
+            modifiedText: modifiedText,
+            modifications: modifications,
+            targetLanguage: targetLanguage,
+            primaryLaw: selectedPrimaryLaw,
+            secondaryLaw: selectedSecondaryLaw
+        };
+        
+        // 显示翻译说明
+        const lawInfo = `正在将合同翻译成${getLanguageDisplayName(targetLanguage)}，确保同时符合${getLawDisplayName(selectedPrimaryLaw)}${selectedSecondaryLaw ? `和${getLawDisplayName(selectedSecondaryLaw)}` : ''}的法律要求...`;
+        showMessage(lawInfo, 'info');
+        
+        const response = await fetch('/api/translate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(translationData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`翻译请求失败: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        // 存储翻译结果
+        translatedContent[targetLanguage] = result;
+        
+        // 显示翻译结果
+        displayTranslatedContent(targetLanguage, result);
+        
+        showMessage('翻译完成！', 'success');
+        
+    } catch (error) {
+        console.error('翻译失败:', error);
+        showMessage('翻译失败: ' + error.message, 'error');
+    }
+}
+
+// 获取修改建议
+function getModificationSuggestions() {
+    const modificationItems = document.querySelectorAll('#combinedModificationList .combined-modification-item');
+    const modifications = [];
+    
+    modificationItems.forEach(item => {
+        const type = item.querySelector('.modification-type')?.textContent || '';
+        const text = item.querySelector('.modification-text')?.textContent || '';
+        const reason = item.querySelector('.modification-reason')?.textContent || '';
+        const lawRef = item.querySelector('.law-reference')?.textContent || '';
+        
+        modifications.push({
+            type: type,
+            text: text,
+            reason: reason,
+            lawRef: lawRef
+        });
+    });
+    
+    return modifications;
+}
+
+// 显示翻译后的内容
+function displayTranslatedContent(targetLanguage, result) {
+    // 更新原文合同
+    if (result.originalText) {
+        document.getElementById('originalTextContent').textContent = result.originalText;
+        document.getElementById('originalTextContent').classList.add('translated');
+    }
+    
+    // 更新修改后合同
+    if (result.modifiedText) {
+        document.getElementById('modifiedTextContent').textContent = result.modifiedText;
+        document.getElementById('modifiedTextContent').classList.add('translated');
+    }
+    
+    // 更新修改建议
+    if (result.modifications) {
+        displayTranslatedModifications(result.modifications);
+    }
+    
+    // 更新当前语言
+    currentLanguage = targetLanguage;
+    
+    // 显示语言切换按钮
+    showLanguageToggle();
+}
+
+// 显示翻译后的修改建议
+function displayTranslatedModifications(translatedModifications) {
+    const container = document.getElementById('combinedModificationList');
+    container.innerHTML = '';
+    
+    translatedModifications.forEach(mod => {
+        const item = document.createElement('div');
+        item.className = 'combined-modification-item';
+        item.innerHTML = `
+            <div class="modification-type ${mod.type.toLowerCase()}">${mod.type}</div>
+            <div class="modification-text">${mod.text}</div>
+            <div class="modification-reason">${mod.reason}</div>
+            <div class="law-reference">${mod.lawRef}</div>
+        `;
+        container.appendChild(item);
+    });
+}
+
+// 显示语言切换按钮
+function showLanguageToggle() {
+    const panelHeader = document.querySelector('.comparison-panel .panel-header h5');
+    if (panelHeader && currentLanguage !== 'zh') {
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'btn btn-sm btn-outline-secondary ms-2';
+        toggleBtn.innerHTML = '<i class="fas fa-language"></i> 切换中文';
+        toggleBtn.onclick = toggleToChinese;
+        panelHeader.appendChild(toggleBtn);
+    }
+}
+
+// 切换回中文
+function toggleToChinese() {
+    // 恢复原始中文内容
+    if (currentAnalysis) {
+        displayResults(currentAnalysis);
+    }
+    
+    // 隐藏语言切换按钮
+    const toggleBtn = document.querySelector('.panel-header .btn-outline-secondary');
+    if (toggleBtn) {
+        toggleBtn.remove();
+    }
+    
+    // 重置翻译状态
+    currentLanguage = 'zh';
+    translatedContent = {};
+    
+    // 隐藏翻译控件
+    document.getElementById('translationControls').style.display = 'none';
+}
+
 // 初始化文件输入
 function initializeFileInput() {
     const fileInput = document.getElementById('fileInput');
@@ -200,6 +482,12 @@ async function analyzeContract() {
         return;
     }
     
+    // 检查是否选择了法律体系
+    if (!selectedPrimaryLaw) {
+        alert('请先选择适用的法律体系！');
+        return;
+    }
+    
     // 显示进度区域
     document.getElementById('uploadSection').style.display = 'none';
     document.getElementById('progressSection').style.display = 'block';
@@ -209,6 +497,10 @@ async function analyzeContract() {
         // 创建 FormData
         const formData = new FormData();
         formData.append('contract', selectedFile);
+        formData.append('primaryLaw', selectedPrimaryLaw);
+        if (selectedSecondaryLaw) {
+            formData.append('secondaryLaw', selectedSecondaryLaw);
+        }
         
         // 发送请求
         const response = await fetch('/api/analyze', {
@@ -750,6 +1042,13 @@ function applyAllModifications() {
 
 // 下载修改后的合同文件
 function downloadOptimizedContract() {
+    // 检查是否有翻译内容
+    if (Object.keys(translatedContent).length > 0) {
+        // 提供多语言下载选项
+        showMultiLanguageDownloadOptions();
+        return;
+    }
+    
     // 优先从修改后合同面板获取内容
     const modifiedTextContent = document.getElementById('modifiedTextContent');
     if (modifiedTextContent && modifiedTextContent.textContent.trim()) {
@@ -768,6 +1067,105 @@ function downloadOptimizedContract() {
     }
     
     showMessage('没有可下载的优化后合同！', 'warning');
+}
+
+// 显示多语言下载选项
+function showMultiLanguageDownloadOptions() {
+    const languages = Object.keys(translatedContent);
+    const currentDate = new Date().toISOString().split('T')[0];
+    
+    // 创建下载选项
+    let downloadOptions = `
+        <div class="alert alert-info">
+            <h6><i class="fas fa-download"></i> 选择下载语言版本：</h6>
+            <p class="text-muted mb-2">此合同已确保同时符合${getLawDisplayName(selectedPrimaryLaw)}${selectedSecondaryLaw ? `和${getLawDisplayName(selectedSecondaryLaw)}` : ''}的法律要求</p>
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <button class="btn btn-primary btn-sm w-100 mb-2" onclick="downloadContractInLanguage('zh', '${currentDate}')">
+                        <i class="fas fa-flag"></i> 中文版本
+                    </button>
+                </div>
+    `;
+    
+    languages.forEach(lang => {
+        const langName = getLanguageDisplayName(lang);
+        downloadOptions += `
+            <div class="col-md-6">
+                <button class="btn btn-success btn-sm w-100 mb-2" onclick="downloadContractInLanguage('${lang}', '${currentDate}')">
+                    <i class="fas fa-language"></i> ${langName}
+                </button>
+            </div>
+        `;
+    });
+    
+    downloadOptions += `
+            </div>
+            <div class="row mt-2">
+                <div class="col-12">
+                    <button class="btn btn-info btn-sm w-100" onclick="downloadAllLanguages('${currentDate}')">
+                        <i class="fas fa-download"></i> 下载所有语言版本
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // 显示下载选项
+    showMessage(downloadOptions, 'info', true);
+}
+
+// 获取语言显示名称
+function getLanguageDisplayName(langCode) {
+    const languageNames = {
+        'en': '英语版本',
+        'ja': '日语版本',
+        'ko': '韩语版本',
+        'de': '德语版本',
+        'fr': '法语版本',
+        'es': '西班牙语版本',
+        'ru': '俄语版本'
+    };
+    return languageNames[langCode] || langCode;
+}
+
+// 下载指定语言的合同
+function downloadContractInLanguage(language, date) {
+    let content = '';
+    let filename = '';
+    
+    if (language === 'zh') {
+        // 中文版本
+        const modifiedTextContent = document.getElementById('modifiedTextContent');
+        content = modifiedTextContent ? modifiedTextContent.textContent : '';
+        filename = `优化后合同_中文_${date}.txt`;
+    } else {
+        // 其他语言版本
+        const translatedData = translatedContent[language];
+        if (translatedData && translatedData.modifiedText) {
+            content = translatedData.modifiedText;
+            const langName = getLanguageDisplayName(language);
+            filename = `优化后合同_${langName}_${date}.txt`;
+        }
+    }
+    
+    if (content) {
+        downloadTextFile(content, filename);
+    } else {
+        showMessage('该语言版本内容不存在！', 'warning');
+    }
+}
+
+// 下载所有语言版本
+function downloadAllLanguages(date) {
+    const languages = ['zh', ...Object.keys(translatedContent)];
+    
+    languages.forEach((lang, index) => {
+        setTimeout(() => {
+            downloadContractInLanguage(lang, date);
+        }, index * 500); // 延迟500ms避免浏览器阻止多个下载
+    });
+    
+    showMessage('正在下载所有语言版本...', 'info');
 }
 
 // 下载文本文件的通用函数
@@ -2060,25 +2458,32 @@ function getScoreBadgeColor(score) {
 }
 
 // 显示消息提示
-function showMessage(message, type = 'info') {
+function showMessage(message, type = 'info', isHTML = false) {
     // 创建消息元素
     const messageDiv = document.createElement('div');
     messageDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    messageDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    messageDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
+    messageDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 400px; max-width: 600px;';
+    
+    if (isHTML) {
+        messageDiv.innerHTML = message;
+    } else {
+        messageDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+    }
     
     // 添加到页面
     document.body.appendChild(messageDiv);
     
-    // 3秒后自动消失
-    setTimeout(() => {
-        if (messageDiv.parentNode) {
-            messageDiv.remove();
-        }
-    }, 3000);
+    // 如果是HTML内容，不自动消失
+    if (!isHTML) {
+        setTimeout(() => {
+            if (messageDiv.parentNode) {
+                messageDiv.remove();
+            }
+        }, 3000);
+    }
 }
 
 // 导出报告

@@ -12,9 +12,9 @@ class AIService {
     console.log('使用模型: anthropic/claude-opus-4.1 (OpenRouter)');
   }
 
-  async analyzeContract(text) {
+  async analyzeContract(text, primaryLaw = 'china', secondaryLaw = null) {
     try {
-      const prompt = this.buildUnifiedAnalysisPrompt(text);
+      const prompt = this.buildUnifiedAnalysisPrompt(text, primaryLaw, secondaryLaw);
       
       const response = await axios.post(
         `${this.baseURL}/chat/completions`,
@@ -53,9 +53,18 @@ class AIService {
     }
   }
 
-  buildUnifiedAnalysisPrompt(text) {
+  buildUnifiedAnalysisPrompt(text, primaryLaw = 'china', secondaryLaw = null) {
+    let lawContext = `主要法律体系：${this.getLawDisplayName(primaryLaw)}`;
+    if (secondaryLaw) {
+      lawContext += `\n次要法律体系：${this.getLawDisplayName(secondaryLaw)}`;
+    }
+    
     return `
-请详细分析以下合同文本的法律合规性，并提供优化建议。请以JSON格式返回结果：
+请详细分析以下合同文本的法律合规性，并提供优化建议。这是一个${primaryLaw === 'china' ? '中' : '外'}国与${secondaryLaw ? this.getLawDisplayName(secondaryLaw).replace('法律', '') : '中国'}之间的国际合同，需要同时符合${this.getLawDisplayName(primaryLaw)}${secondaryLaw ? `和${this.getLawDisplayName(secondaryLaw)}` : ''}的法律要求。
+
+${lawContext}
+
+重要说明：此合同需要同时满足两个国家的法律合规性，确保在两国都具有法律效力。
 
 合同文本：
 ${text}
@@ -760,6 +769,86 @@ ${JSON.stringify(analysis, null, 2)}
     });
     
     return modifiedText;
+  }
+
+  // 翻译内容
+  async translateContent(prompt, targetLanguage) {
+    try {
+      const response = await axios.post(
+        `${this.baseURL}/chat/completions`,
+        {
+          model: "anthropic/claude-opus-4.1",
+          messages: [
+            {
+              role: "system",
+              content: `你是一个专业的法律翻译专家，专门负责将中文法律合同翻译成${this.getLanguageName(targetLanguage)}。请确保翻译的准确性和专业性，特别是法律术语的翻译。请严格按照JSON格式返回结果。`
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.1,
+          max_tokens: 8000
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'http://localhost:3001',
+            'X-Title': 'Legal Contract Translation AI'
+          }
+        }
+      );
+
+      const aiResponse = response.data.choices[0].message.content;
+      console.log('AI翻译响应:', aiResponse);
+      
+      try {
+        // 尝试解析JSON响应
+        return JSON.parse(aiResponse);
+      } catch (parseError) {
+        console.error('AI翻译响应解析失败:', parseError);
+        // 如果解析失败，返回错误信息
+        return {
+          error: '翻译响应格式错误',
+          originalResponse: aiResponse
+        };
+      }
+    } catch (error) {
+      console.error('AI翻译失败:', error);
+      return {
+        error: '翻译服务暂时不可用',
+        details: error.message
+      };
+    }
+  }
+
+  // 获取语言名称
+  getLanguageName(langCode) {
+    const languageNames = {
+      'en': '英语',
+      'ja': '日语',
+      'ko': '韩语',
+      'de': '德语',
+      'fr': '法语',
+      'es': '西班牙语',
+      'ru': '俄语'
+    };
+    return languageNames[langCode] || langCode;
+  }
+
+  // 获取法律体系显示名称
+  getLawDisplayName(lawCode) {
+    const lawNames = {
+      'china': '中华人民共和国法律',
+      'usa': '美国法律 (U.S. Law)',
+      'eu': '欧盟法律 (EU Law)',
+      'uk': '英国法律 (UK Law)',
+      'japan': '日本法律 (Japanese Law)',
+      'singapore': '新加坡法律 (Singapore Law)'
+    };
+    return lawNames[lawCode] || lawCode;
   }
 }
 

@@ -78,8 +78,12 @@ app.post('/api/analyze', upload.single('contract'), async (req, res) => {
     // 提取文本
     const text = await extractText(filePath, fileType);
 
-    // 使用AI分析合规性
-    const analysis = await aiService.analyzeContract(text);
+    // 获取法律体系信息
+    const primaryLaw = req.body.primaryLaw || 'china';
+    const secondaryLaw = req.body.secondaryLaw || null;
+
+    // 使用AI分析合规性，考虑选择的法律体系
+    const analysis = await aiService.analyzeContract(text, primaryLaw, secondaryLaw);
 
     // 保存到数据库
     await saveContract({
@@ -243,6 +247,86 @@ app.post('/api/ai-modify-contract', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// 翻译API端点
+app.post('/api/translate', async (req, res) => {
+  try {
+    const { originalText, modifiedText, modifications, targetLanguage, primaryLaw, secondaryLaw } = req.body;
+    
+    if (!originalText || !targetLanguage) {
+      return res.status(400).json({ error: '缺少必要参数' });
+    }
+
+    // 构建翻译提示词，确保合同符合两个国家的法律
+    let prompt = `请将以下中文合同内容翻译成${getLanguageName(targetLanguage)}。这是一个需要同时符合${getLawDisplayName(primaryLaw)}${secondaryLaw ? `和${getLawDisplayName(secondaryLaw)}` : ''}法律要求的国际合同。
+
+重要要求：
+1. 翻译后的合同必须同时符合两个国家的法律要求
+2. 确保在两国都具有法律效力
+3. 保持法律术语的准确性和专业性
+4. 使用目标语言中对应的法律术语
+5. 确保合同条款在两个国家都能被正确理解和执行
+
+原文合同：
+${originalText}
+
+修改后合同：
+${modifiedText}
+
+修改建议：
+${JSON.stringify(modifications, null, 2)}
+
+请返回JSON格式的翻译结果，包含以下字段：
+{
+  "originalText": "翻译后的原文",
+  "modifiedText": "翻译后的修改后合同",
+  "modifications": [
+    {
+      "type": "修改类型",
+      "text": "翻译后的修改建议",
+      "reason": "翻译后的修改原因",
+      "lawRef": "翻译后的法律依据"
+    }
+  ]
+}`;
+
+    // 使用AI服务进行翻译
+    const translationResult = await aiService.translateContent(prompt, targetLanguage);
+    
+    res.json(translationResult);
+
+  } catch (error) {
+    console.error('翻译错误:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 获取语言名称
+function getLanguageName(langCode) {
+  const languageNames = {
+    'en': '英语',
+    'ja': '日语',
+    'ko': '韩语',
+    'de': '德语',
+    'fr': '法语',
+    'es': '西班牙语',
+    'ru': '俄语'
+  };
+  return languageNames[langCode] || langCode;
+}
+
+// 获取法律体系显示名称
+function getLawDisplayName(lawCode) {
+  const lawNames = {
+    'china': '中华人民共和国法律',
+    'usa': '美国法律',
+    'eu': '欧盟法律',
+    'uk': '英国法律',
+    'japan': '日本法律',
+    'singapore': '新加坡法律'
+  };
+  return lawNames[lawCode] || lawCode;
+}
 
 // 启动服务器
 async function startServer() {
