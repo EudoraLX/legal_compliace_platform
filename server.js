@@ -52,7 +52,8 @@ const upload = multer({
 const { extractText } = require('./utils/textExtractor');
 const { analyzeForeignTradeCompliance, generateContractModifications } = require('./utils/analyzer');
 const { initDatabase, saveContract, getContractHistory, getContractById, getStatistics, deleteContract, checkDbConnection } = require('./utils/database');
-const aiService = require('./utils/aiService');
+const AIService = require('./utils/aiService');
+const aiService = new AIService();
 
 // 数据库连接
 let db;
@@ -63,50 +64,78 @@ let db;
 app.post('/api/analyze', upload.single('contract'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: '请上传文件' });
+      return res.status(400).json({ error: '请上传合同文件' });
     }
 
-    // 检查数据库连接
-    if (!await checkDbConnection()) {
-      return res.status(500).json({ error: '数据库连接失败' });
-    }
-
-    const filePath = req.file.path;
-    const fileType = path.extname(req.file.originalname).toLowerCase();
-    const contractId = uuidv4();
-
-    // 提取文本
-    const text = await extractText(filePath, fileType);
-
-    // 获取法律体系信息
     const primaryLaw = req.body.primaryLaw || 'china';
     const secondaryLaw = req.body.secondaryLaw || null;
 
-    // 使用AI分析合规性，考虑选择的法律体系
-    const analysis = await aiService.analyzeContract(text, primaryLaw, secondaryLaw);
+    // 设置响应头，支持流式传输
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Transfer-Encoding', 'chunked');
 
-    // 保存到数据库
-    await saveContract({
-      id: contractId,
-      filename: req.file.filename,
-      original_name: req.file.originalname,
-      content: text,
-      analysis_result: analysis,
-      risk_score: analysis.compliance_score
-    });
+    // 发送进度更新函数
+    const sendProgress = (progress, message) => {
+      res.write(JSON.stringify({ type: 'progress', progress, message }) + '\n');
+    };
 
-    // 删除临时文件
-    fs.unlinkSync(filePath);
+    // 发送步骤结果函数
+    const sendStepResult = (step, result) => {
+      res.write(JSON.stringify({ type: 'step_result', step, result }) + '\n');
+    };
 
-    res.json({
-      id: contractId,
-      filename: req.file.originalname,
-      analysis: analysis,
-      contract_text: text
-    });
+    // 发送完成信号函数
+    const sendComplete = (result) => {
+      res.write(JSON.stringify({ type: 'complete', result }) + '\n');
+      res.end();
+    };
+
+    try {
+      // 提取文本内容
+      const text = await extractText(req.file.path, path.extname(req.file.originalname).toLowerCase());
+      console.log('提取的文本长度:', text.length);
+
+      // 发送开始信号
+      sendProgress(20, '开始AI分析流程...');
+
+      // 使用完整的分析流程（支持部分失败）
+      console.log('开始完整分析流程...');
+      const analysis = await aiService.analyzeContractComplete(text, primaryLaw, secondaryLaw, sendStepResult);
+      
+      console.log('分析完成，状态:', analysis.analysis_status);
+      console.log('可重试步骤:', analysis.can_retry_steps);
+
+      // 保存到数据库
+      const contractId = await saveContract({
+        id: uuidv4(),
+        filename: req.file.filename,
+        original_name: req.file.originalname,
+        content: text,
+        file_size: req.file.size,
+        file_type: path.extname(req.file.originalname),
+        primary_law: primaryLaw || 'china',
+        secondary_law: secondaryLaw || null,
+        analysis_result: analysis,
+        compliance_score: analysis.compliance_score,
+        risk_level: analysis.risk_level,
+        analysis_summary: analysis.analysis_summary
+      });
+      analysis.id = contractId;
+      
+      // 删除临时文件
+      fs.unlinkSync(req.file.path);
+
+      // 发送完成信号
+      sendComplete(analysis);
+
+    } catch (error) {
+      console.error('分析过程中出错:', error);
+      res.write(JSON.stringify({ type: 'error', error: error.message }) + '\n');
+      res.end();
+    }
 
   } catch (error) {
-    console.error('分析错误:', error);
+    console.error('分析API错误:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -149,8 +178,8 @@ app.get('/api/analysis/:id', async (req, res) => {
     }
 
     // 检查必要字段
-    if (!contract.analysis_result) {
-      console.log('API: 合同数据缺少analysis_result字段');
+    if (!contract.analysis_results) {
+      console.log('API: 合同数据缺少analysis_results字段');
       return res.status(500).json({ error: '分析结果数据不完整' });
     }
 
@@ -301,6 +330,83 @@ ${JSON.stringify(modifications, null, 2)}
   }
 });
 
+// 重试特定分析步骤
+app.post('/api/retry-step', async (req, res) => {
+  try {
+    const { stepName, contractId, primaryLaw, secondaryLaw } = req.body;
+    
+    if (!stepName || !contractId) {
+      return res.status(400).json({ error: '缺少必要参数' });
+    }
+
+    // 检查数据库连接
+    if (!await checkDbConnection()) {
+      return res.status(500).json({ error: '数据库连接失败' });
+    }
+
+    // 获取原始合同内容
+    const contract = await getContractById(contractId);
+    if (!contract) {
+      return res.status(404).json({ error: '合同记录不存在' });
+    }
+
+    // 重试特定步骤
+    let result;
+    switch (stepName) {
+      case 'legal_analysis':
+        result = await aiService.analyzeLegalCompliance(contract.content, primaryLaw, secondaryLaw);
+        break;
+      
+      case 'optimization':
+        // 需要先有法律分析结果
+        if (!contract.analysis_results) {
+          return res.status(400).json({ error: '需要先完成法律分析' });
+        }
+        result = await aiService.optimizeContract(contract.content, contract.analysis_results, primaryLaw, secondaryLaw);
+        break;
+      
+      case 'translation':
+        // 需要先有优化结果
+        if (!contract.analysis_results?.contract_optimization) {
+          return res.status(400).json({ error: '需要先完成合同优化' });
+        }
+        const optimizedText = contract.analysis_results.contract_optimization.optimized_text || contract.content;
+        result = await aiService.translateContract(optimizedText, 'en', primaryLaw, secondaryLaw);
+        break;
+      
+      default:
+        return res.status(400).json({ error: '无效的步骤名称' });
+    }
+
+    // 更新数据库中的分析结果
+    await updateAnalysisStep(contractId, stepName, result);
+
+    res.json({
+      success: true,
+      step: stepName,
+      result: result,
+      message: `${stepName} 步骤重试成功`
+    });
+
+  } catch (error) {
+    console.error('重试步骤失败:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 更新特定步骤的分析结果
+async function updateAnalysisStep(contractId, stepName, result) {
+  try {
+    // 这里需要根据具体的数据库结构来更新
+    // 暂时返回成功，具体实现需要根据数据库表结构调整
+    console.log(`更新步骤 ${stepName} 的结果:`, result);
+    return true;
+  } catch (error) {
+    console.error('更新分析步骤失败:', error);
+    throw error;
+  }
+}
+
 // 获取语言名称
 function getLanguageName(langCode) {
   const languageNames = {
@@ -344,3 +450,37 @@ async function startServer() {
 }
 
 startServer(); 
+
+// 翻译原文API
+app.post('/api/translate-original', async (req, res) => {
+  try {
+    const { original_text, target_language, primaryLaw, secondaryLaw } = req.body;
+    
+    if (!original_text) {
+      return res.status(400).json({ error: '缺少原文内容' });
+    }
+
+    // 调用AI翻译原文
+    const translation = await aiService.translateContractWithContext(
+      aiService.buildTranslationPromptWithContext(original_text, target_language, {
+        matched_articles: [],
+        primary_law: primaryLaw,
+        secondary_law: secondaryLaw
+      }, primaryLaw, secondaryLaw)
+    );
+
+    if (translation.status === 'failed') {
+      return res.status(500).json({ error: translation.error });
+    }
+
+    res.json({
+      success: true,
+      translated_text: translation.translated_text,
+      target_language: translation.target_language
+    });
+
+  } catch (error) {
+    console.error('翻译原文失败:', error);
+    res.status(500).json({ error: error.message });
+  }
+}); 

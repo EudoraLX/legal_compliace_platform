@@ -1,17 +1,6 @@
 /*
- Navicat Premium Data Transfer
-
- Source Server         : legal
- Source Server Type    : MySQL
- Source Server Version : 80027 (8.0.27)
- Source Host           : localhost:3306
- Source Schema         : legal_compliance
-
- Target Server Type    : MySQL
- Target Server Version : 80027 (8.0.27)
- File Encoding         : 65001
-
- Date: 11/08/2025 15:46:46
+ 法律合同合规分析系统数据库表结构
+ 支持双法律体系合规分析、AI优化建议、翻译版本等功能
 */
 
 SET NAMES utf8mb4;
@@ -21,21 +10,146 @@ SET FOREIGN_KEY_CHECKS = 0;
 -- Table structure for contracts
 -- ----------------------------
 DROP TABLE IF EXISTS `contracts`;
-CREATE TABLE `contracts`  (
-  `id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `filename` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `original_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
-  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL,
-  `analysis_result` json NULL,
-  `risk_score` decimal(5, 2) NULL DEFAULT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+CREATE TABLE `contracts` (
+  `id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '合同ID',
+  `filename` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '存储文件名',
+  `original_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '原始文件名',
+  `content` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '合同原文内容',
+  `file_size` bigint DEFAULT NULL COMMENT '文件大小(字节)',
+  `file_type` varchar(20) DEFAULT NULL COMMENT '文件类型(pdf, docx, doc, txt)',
+  
+  -- 法律体系选择
+  `primary_law` varchar(50) DEFAULT 'china' COMMENT '主要法律体系',
+  `secondary_law` varchar(50) DEFAULT NULL COMMENT '次要法律体系',
+  
+  -- 分析结果
+  `compliance_score` decimal(5,2) DEFAULT NULL COMMENT '合规评分(0-100)',
+  `risk_level` varchar(20) DEFAULT NULL COMMENT '风险等级(high, medium, low)',
+  `analysis_summary` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '分析摘要',
+  
+  -- 时间戳
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_compliance_score` (`compliance_score`),
+  KEY `idx_primary_law` (`primary_law`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic COMMENT = '合同基础信息表';
 
 -- ----------------------------
--- Records of contracts
+-- Table structure for analysis_results
 -- ----------------------------
-INSERT INTO `contracts` VALUES ('c8ea26c8-ed7c-4afd-8d74-24bd3fb34c04', '1754893437723-e320adae-043f-42d0-9350-ee40a1706e2a.txt', 'problematic-contract.txt', '进出口贸易合同\r\n\r\n甲方：中国某进出口贸易公司\r\n乙方：美国某贸易伙伴公司\r\n\r\n第一条 合同标的\r\n乙方同意向甲方出口电子产品，包括但不限于手机、电脑、平板等。\r\n\r\n第二条 贸易方式\r\n采用一般贸易方式，通过海关正常报关程序。\r\n\r\n第三条 价格条款\r\n合同总金额：USD 500,000\r\n付款方式：货到付款\r\n交货地点：上海港\r\n\r\n第四条 许可证要求\r\n乙方承诺所有出口商品均符合相关许可证要求。\r\n\r\n第五条 违约责任\r\n如任何一方违反本协议，应承担相应法律责任。\r\n\r\n第六条 争议解决\r\n本合同适用中国法律，争议提交中国法院解决。\r\n\r\n第七条 其他条款\r\n本合同未尽事宜，双方协商解决。\r\n\r\n甲方代表：张三\r\n乙方代表：John Smith\r\n签约日期：2024年8月7日 ', '{\"suggestions\": [\"建议咨询专业律师进行详细审查\"], \"risk_factors\": [], \"analysis_summary\": \"基础分析完成，建议使用AI分析获得更准确结果\", \"compliance_score\": 70, \"matched_articles\": [{\"article\": \"《对外贸易法》第2条 - 适用范围\", \"analysis\": \"合同内容涉及本法适用于对外贸易以及与对外贸易有关的知识产权保护\", \"compliance\": true, \"description\": \"本法适用于对外贸易以及与对外贸易有关的知识产权保护\", \"original_text\": \"本法适用于对外贸易以及与对外贸易有关的知识产权保护。本法所称对外贸易，是指货物进出口、技术进出口和国际服务贸易。\", \"contract_reference\": \"进出口贸易合同\"}, {\"article\": \"《对外贸易法》第15条 - 货物进出口管理\", \"analysis\": \"合同内容涉及国家基于下列原因，可以限制或者禁止有关货物、技术的进口或者出口\", \"compliance\": true, \"description\": \"国家基于下列原因，可以限制或者禁止有关货物、技术的进口或者出口\", \"original_text\": \"国家基于下列原因，可以限制或者禁止有关货物、技术的进口或者出口：（一）为维护国家安全、社会公共利益或者公共道德，需要限制或者禁止进口或者出口的；（二）为保护人的健康或者安全，保护动物、植物的生命或者健康，保护环境，需要限制或者禁止进口或者出口的；（三）为实施与黄金或者白银进出口有关的措施，需要限制或者禁止进口或者出口的；（四）国内供应短缺或者为有效保护可能用竭的自然资源，需要限制禁止出口的；（五）输往国家或者地区的市场容量有限，需要限制出口的；（六）出口经营秩序出现严重混乱，需要限制出口的；（七）为建立或者加快建立国内特定产业，需要限制进口的；（八）对任何形式的农业、牧业、渔业产品有必要限制进口的；（九）为保障国家国际金融地位和国际收支平衡，需要限制进口的；（十）依照法律、行政法规的规定，其他需要限制或者禁止进口或者出口的；（十一）根据我国缔结或者参加的国际条约、协定的规定，其他需要限制或者禁止进口或者出口的。\", \"contract_reference\": \"第四条 许可证要求\"}], \"contract_modifications\": []}', 70.00, '2025-08-11 06:24:04');
-INSERT INTO `contracts` VALUES ('dbab0f01-8e7a-400a-bb4b-7c3f717e5119', '1754620880353-c4772492-b45a-473a-b9ee-4006e5f62ebd.txt', 'test-contract.txt', '对外贸易合同\r\n\r\n甲方：中国进出口贸易公司\r\n地址：北京市朝阳区国际贸易大厦\r\n法定代表人：张三\r\n联系电话：010-12345678\r\n\r\n乙方：美国贸易伙伴公司\r\n地址：美国纽约市曼哈顿区\r\n法定代表人：John Smith\r\n联系电话：+1-212-1234567\r\n\r\n第一条 合同标的\r\n乙方同意向甲方出口电子产品，包括但不限于手机、电脑、平板等设备，具体规格和数量以订单为准。所有产品必须符合中国相关技术标准和产品质量要求。\r\n\r\n第二条 贸易方式\r\n采用一般贸易方式，通过海关正常报关程序，乙方负责办理出口手续，甲方负责办理进口手续。双方应确保所有进出口活动符合《中华人民共和国对外贸易法》及相关法规要求。\r\n\r\n第三条 许可证要求\r\n乙方承诺所有出口商品均符合相关许可证要求，并保证商品质量符合中国相关标准。如涉及限制或禁止进出口商品，乙方应提前告知甲方并取得相应许可。\r\n\r\n第四条 价格和支付\r\n商品价格以美元（符合中国外汇管理规定）计价，采用信用证支付方式，具体价格以双方确认的订单为准。信用证开证银行为双方认可的具有国际结算资格的银行，具体银行名称和信用证条款另行约定。\r\n\r\n第五条 交货和运输\r\n乙方负责将货物运至指定港口，运输费用由乙方承担，货物风险自装船后转移给甲方。乙方应确保运输过程符合相关国际运输法规。\r\n\r\n第六条 质量保证\r\n乙方保证所供商品符合合同规定的质量标准，如发现质量问题，乙方应承担相应责任并负责退换货。乙方应提供相应的质量证明文件和技术标准证书。\r\n\r\n第七条 违约责任\r\n如任何一方违反本协议，应承担相应法律责任，并赔偿对方因此造成的损失。具体赔偿标准按照实际损失计算。如因违反对外贸易法规造成的损失，违约方应承担全部责任。\r\n\r\n第八条 争议解决\r\n因本合同引起的争议，双方应友好协商解决；协商不成的，提交中国国际经济贸易仲裁委员会仲裁。仲裁地点为北京，仲裁语言为中文。\r\n\r\n第九条 知识产权保护\r\n双方应尊重和保护对方的知识产权，不得侵犯对方的商标、专利、版权等知识产权。如发生知识产权纠纷，责任方应承担相应法律责任。\r\n\r\n第十条 合同生效\r\n本合同自双方签字盖章之日起生效，有效期一年。合同期满后，双方可协商续签。\r\n\r\n甲方：中国进出口贸易公司（盖章）\r\n法定代表人：张三（签字）\r\n日期：2024年1月1日\r\n\r\n乙方：美国贸易伙伴公司（盖章）\r\n法定代表人：John Smith（签字）\r\n日期：2024年1月1日 ', '{\"suggestions\": [\"在合同中明确列出限制进出口货物的具体规定，并注明乙方需遵守的相关法律要求\", \"增加关于进出口货物原产地的规定，确保符合相关法律要求\"], \"risk_factors\": [{\"type\": \"合规风险\", \"severity\": \"medium\", \"suggestion\": \"在合同中明确列出限制进出口货物的具体规定，并注明乙方需遵守的相关法律要求\", \"description\": \"合同未明确提及《中华人民共和国对外贸易法》第十六条关于限制进出口货物的具体规定\", \"related_articles\": [\"《对外贸易法》第十六条\"]}, {\"type\": \"合规风险\", \"severity\": \"low\", \"suggestion\": \"在合同中增加关于进出口货物原产地的规定，确保符合相关法律要求\", \"description\": \"合同未明确提及《中华人民共和国对外贸易法》第十九条关于进出口货物原产地的规定\", \"related_articles\": [\"《对外贸易法》第十九条\"]}], \"analysis_summary\": \"总体而言，该合同在大部分方面符合《中华人民共和国对外贸易法》的要求，特别是在许可证要求、技术标准和外汇管理方面。然而，合同在限制进出口货物的具体规定和进出口货物原产地的规定方面存在不足，建议补充相关内容以确保全面合规。\", \"compliance_score\": 90, \"matched_articles\": [{\"article\": \"《对外贸易法》第十六条 - 限制进出口货物\", \"analysis\": \"合同中提及了许可证要求，但未具体列出限制进出口货物的规定，建议补充\", \"compliance\": true, \"description\": \"国家基于维护国家安全、社会公共利益或者公共道德等需要，可以限制或者禁止有关货物、技术的进出口。\", \"original_text\": \"国家基于维护国家安全、社会公共利益或者公共道德等需要，可以限制或者禁止有关货物、技术的进出口。\", \"contract_reference\": \"第三条 许可证要求\"}, {\"article\": \"《对外贸易法》第十九条 - 进出口货物原产地\", \"analysis\": \"合同中未提及进出口货物原产地的规定，建议补充\", \"compliance\": false, \"description\": \"国家对进出口货物原产地实施管理。具体办法由国务院规定。\", \"original_text\": \"国家对进出口货物原产地实施管理。具体办法由国务院规定。\", \"contract_reference\": \"第一条 合同标的\"}, {\"article\": \"《对外贸易法》第二十条 - 进出口货物检验\", \"analysis\": \"合同中明确要求产品符合中国相关技术标准和产品质量要求，符合法律规定\", \"compliance\": true, \"description\": \"国家对进出口货物实施检验。进出口货物应当符合国家技术规范的强制性要求。\", \"original_text\": \"国家对进出口货物实施检验。进出口货物应当符合国家技术规范的强制性要求。\", \"contract_reference\": \"第一条 合同标的\"}, {\"article\": \"《对外贸易法》第二十一条 - 进出口货物许可证\", \"analysis\": \"合同中提及了许可证要求，符合法律规定\", \"compliance\": true, \"description\": \"国家对限制进出口的货物实行许可证管理。\", \"original_text\": \"国家对限制进出口的货物实行许可证管理。\", \"contract_reference\": \"第三条 许可证要求\"}, {\"article\": \"《对外贸易法》第二十二条 - 外汇管理\", \"analysis\": \"合同中提及了美元计价和信用证支付，符合中国外汇管理规定\", \"compliance\": true, \"description\": \"国家对外汇实行统一管理。对外贸易经营者应当按照国家规定办理外汇收支业务。\", \"original_text\": \"国家对外汇实行统一管理。对外贸易经营者应当按照国家规定办理外汇收支业务。\", \"contract_reference\": \"第四条 价格和支付\"}], \"contract_modifications\": [{\"type\": \"add\", \"reason\": \"明确列出限制进出口货物的具体规定，确保合同全面合规\", \"position\": \"第三条 许可证要求\", \"original_text\": \"乙方承诺所有出口商品均符合相关许可证要求，并保证商品质量符合中国相关标准。如涉及限制或禁止进出口商品，乙方应提前告知甲方并取得相应许可。\", \"suggested_text\": \"乙方承诺所有出口商品均符合相关许可证要求，并保证商品质量符合中国相关标准。如涉及限制或禁止进出口商品，乙方应提前告知甲方并取得相应许可。限制进出口货物的具体规定详见《中华人民共和国对外贸易法》第十六条。\", \"related_article\": \"《对外贸易法》第十六条\"}, {\"type\": \"add\", \"reason\": \"增加关于进出口货物原产地的规定，确保合同全面合规\", \"position\": \"第一条 合同标的\", \"original_text\": \"乙方同意向甲方出口电子产品，包括但不限于手机、电脑、平板等设备，具体规格和数量以订单为准。所有产品必须符合中国相关技术标准和产品质量要求。\", \"suggested_text\": \"乙方同意向甲方出口电子产品，包括但不限于手机、电脑、平板等设备，具体规格和数量以订单为准。所有产品必须符合中国相关技术标准和产品质量要求，并符合《中华人民共和国对外贸易法》关于进出口货物原产地的规定。\", \"related_article\": \"《对外贸易法》第十九条\"}]}', 90.00, '2025-08-08 02:42:33');
+DROP TABLE IF EXISTS `analysis_results`;
+CREATE TABLE `analysis_results` (
+  `id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '分析结果ID',
+  `contract_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '合同ID',
+  
+  -- 合规分析
+  `compliance_score` decimal(5,2) NOT NULL COMMENT '合规评分',
+  `risk_level` varchar(20) NOT NULL COMMENT '风险等级',
+  `analysis_summary` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '分析摘要',
+  
+  -- 风险因素
+  `risk_factors` json DEFAULT NULL COMMENT '风险因素JSON数组',
+  
+  -- 改进建议
+  `suggestions` json DEFAULT NULL COMMENT '改进建议JSON数组',
+  
+  -- 相关法条
+  `matched_articles` json DEFAULT NULL COMMENT '匹配的相关法条JSON数组',
+  
+  -- 合同优化
+  `optimized_text` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '优化后的合同文本',
+  `modifications` json DEFAULT NULL COMMENT '修改建议JSON数组',
+  `optimization_summary` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '优化总结',
+  
+  -- 翻译版本
+  `translation` json DEFAULT NULL COMMENT '翻译信息JSON对象',
+  
+  -- 分析时间
+  `analyzed_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '分析完成时间',
+  
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_contract_id` (`contract_id`),
+  KEY `idx_analyzed_at` (`analyzed_at`),
+  KEY `idx_compliance_score` (`compliance_score`),
+  CONSTRAINT `fk_analysis_contract` FOREIGN KEY (`contract_id`) REFERENCES `contracts` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic COMMENT = '合同分析结果表';
 
-SET FOREIGN_KEY_CHECKS = 1;
+-- ----------------------------
+-- Table structure for contract_modifications
+-- ----------------------------
+DROP TABLE IF EXISTS `contract_modifications`;
+CREATE TABLE `contract_modifications` (
+  `id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '修改建议ID',
+  `analysis_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '分析结果ID',
+  
+  -- 修改信息
+  `type` varchar(20) NOT NULL COMMENT '修改类型(add, modify, delete)',
+  `position` varchar(100) NOT NULL COMMENT '修改位置(条款位置)',
+  `original_text` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '原文内容',
+  `optimized_text` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '优化后内容',
+  
+  -- 法律依据
+  `reason` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '修改原因和法律依据',
+  `related_article` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '相关法律条款',
+  
+  -- 高亮信息
+  `highlight_start` int DEFAULT NULL COMMENT '高亮开始位置',
+  `highlight_end` int DEFAULT NULL COMMENT '高亮结束位置',
+  `highlight_type` varchar(20) DEFAULT 'modify' COMMENT '高亮类型',
+  
+  -- 排序
+  `sort_order` int DEFAULT 0 COMMENT '排序顺序',
+  
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_analysis_id` (`analysis_id`),
+  KEY `idx_type` (`type`),
+  KEY `idx_sort_order` (`sort_order`),
+  CONSTRAINT `fk_modification_analysis` FOREIGN KEY (`analysis_id`) REFERENCES `analysis_results` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic COMMENT = '合同修改建议表';
+
+-- ----------------------------
+-- Table structure for contract_translations
+-- ----------------------------
+DROP TABLE IF EXISTS `contract_translations`;
+CREATE TABLE `contract_translations` (
+  `id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '翻译ID',
+  `analysis_id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '分析结果ID',
+  
+  -- 翻译信息
+  `target_language` varchar(10) NOT NULL COMMENT '目标语言代码(en, ja, de, fr, es, ru, ko)',
+  `language_name` varchar(50) NOT NULL COMMENT '语言名称',
+  `translated_text` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '翻译后的完整合同文本',
+  
+  -- 翻译的修改建议
+  `translated_modifications` json DEFAULT NULL COMMENT '翻译后的修改建议JSON数组',
+  
+  -- 翻译时间
+  `translated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '翻译完成时间',
+  
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_analysis_language` (`analysis_id`, `target_language`),
+  KEY `idx_target_language` (`target_language`),
+  CONSTRAINT `fk_translation_analysis` FOREIGN KEY (`analysis_id`) REFERENCES `analysis_results` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic COMMENT = '合同翻译表';
+
+-- ----------------------------
+-- Table structure for legal_articles
+-- ----------------------------
+DROP TABLE IF EXISTS `legal_articles`;
+CREATE TABLE `legal_articles` (
+  `id` varchar(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '法条ID',
+  `article_code` varchar(100) NOT NULL COMMENT '法条编号',
+  `article_title` varchar(200) NOT NULL COMMENT '法条标题',
+  `law_system` varchar(50) NOT NULL COMMENT '法律体系(china, usa, eu, japan等)',
+  `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '法条内容',
+  `category` varchar(100) DEFAULT NULL COMMENT '法条分类',
+  `is_active` tinyint(1) DEFAULT 1 COMMENT '是否有效',
+  
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE KEY `uk_article_code` (`article_code`),
+  KEY `idx_law_system` (`law_system`),
+  KEY `idx_category` (`category`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic COMMENT = '法律条款表';
