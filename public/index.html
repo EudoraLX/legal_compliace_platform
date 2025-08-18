@@ -628,8 +628,28 @@
         }
         
         .text-container {
-            height: 100%;
+            height: 500px;
             overflow-y: auto;
+            min-height: 500px;
+        }
+        
+        .comparison-panel {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .panel-body {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
         }
         
         .highlighted-text {
@@ -769,6 +789,30 @@
         
         .translated-modification-item .mod-type {
             background: #27ae60;
+        }
+        
+        .translated-legal-summary {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        
+        .translated-legal-summary h6 {
+            color: #2c3e50;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .translated-original-modifications {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+        
+        .translated-original-modifications h6 {
+            color: #2c3e50;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
         }
         
         /* 高亮样式 */
@@ -1059,11 +1103,6 @@
                                     <div class="comparison-panel">
                                         <div class="panel-header">
                                             <h5><i class="fas fa-file-alt"></i> 原文合同</h5>
-                                            <div class="panel-actions">
-                                                <button class="btn btn-sm btn-outline-primary" onclick="toggleHighlightMode()">
-                                                    <i class="fas fa-highlighter"></i> 高亮模式
-                                                </button>
-                                            </div>
                                         </div>
                                         <div class="panel-body">
                                             <div id="originalTextContainer" class="text-container">
@@ -1081,7 +1120,7 @@
                                         <div class="panel-header">
                                             <h5><i class="fas fa-file-check"></i> 修改后合同</h5>
                                             <div class="panel-actions">
-                                                <button class="btn btn-sm btn-outline-success" onclick="downloadOptimizedContract()">
+                                                <button class="btn btn-sm btn-outline-success" onclick="downloadModifiedText()">
                                                     <i class="fas fa-download"></i> 下载修改文
                                                 </button>
                                             </div>
@@ -1140,7 +1179,7 @@
                                         <div class="panel-header">
                                             <h5><i class="fas fa-file-check"></i> 翻译修改文</h5>
                                             <div class="panel-actions">
-                                                <button class="btn btn-sm btn-outline-info" onclick="downloadTranslatedContract()">
+                                                <button class="btn btn-sm btn-outline-info" onclick="downloadTranslatedText()">
                                                     <i class="fas fa-download"></i> 下载翻译文
                                                 </button>
                                             </div>

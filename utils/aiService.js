@@ -44,6 +44,11 @@ class AIService {
         }
       );
 
+      // 检查响应数据结构
+      if (!response.data || !response.data.choices || !response.data.choices[0] || !response.data.choices[0].message) {
+        throw new Error('AI响应数据结构异常');
+      }
+      
       const aiResponse = response.data.choices[0].message.content;
       console.log('法律分析AI响应:', aiResponse);
       return this.parseLegalAnalysisResponse(aiResponse);
@@ -133,6 +138,11 @@ class AIService {
         }
       );
 
+      // 检查响应数据结构
+      if (!response.data || !response.data.choices || !response.data.choices[0] || !response.data.choices[0].message) {
+        throw new Error('AI响应数据结构异常');
+      }
+      
       const aiResponse = response.data.choices[0].message.content;
       console.log('合同翻译AI响应:', aiResponse);
       return this.parseTranslationResponse(aiResponse);
@@ -258,6 +268,8 @@ class AIService {
       suggestions: [],
       matched_articles: [],
       analysis_summary: '分析未完成',
+      content: originalText, // 添加原始合同内容
+      contract_text: originalText, // 添加原始合同内容（兼容性）
       contract_optimization: {
         optimized_text: originalText,
         modifications: [],
@@ -334,7 +346,7 @@ class AIService {
     const primaryLawName = this.getLawName(primaryLaw);
     const secondaryLawName = secondaryLaw ? this.getLawName(secondaryLaw) : null;
     
-    let prompt = `分析以下合同的法律合规性，确保同时符合${primaryLawName}法律`;
+    let prompt = `请分析以下国际合同的法律合规性，确保同时符合${primaryLawName}法律`;
     if (secondaryLawName) {
       prompt += `和${secondaryLawName}法律`;
     }
@@ -343,11 +355,11 @@ class AIService {
 合同内容：
 ${text}
 
-要求：
-1. 评估合规性（0-100分）
+分析要求：
+1. 评估合同合规性（0-100分）
 2. 识别风险因素
 3. 提供改进建议（必须引用具体法律条文）
-4. 匹配相关法条
+4. 匹配相关法条并提供详细分析
 
 请返回JSON格式：
 {
@@ -360,7 +372,16 @@ ${text}
       "legal_basis": "具体法律条文引用"
     }
   ],
-  "matched_articles": ["法条1", "法条2"],
+  "matched_articles": [
+    {
+      "article": "法条名称和编号",
+      "description": "法条内容描述",
+      "compliance": true/false,
+      "original_text": "法条原文",
+      "contract_reference": "与合同的具体关联",
+      "analysis": "详细分析说明"
+    }
+  ],
   "analysis_summary": "分析摘要"
 }`;
 
@@ -384,18 +405,25 @@ ${text}
 
 要求：
 1. 提供优化后的合同文本
-2. 列出具体修改点（必须引用法律依据）
+2. 列出具体修改点（必须引用具体法律条文作为依据）
 3. 确保修改后的合同符合两国法律
+4. 为每个修改点提供精确的原文匹配信息，用于前端高亮显示
+5. 每个修改建议必须包含：
+   - 具体的法律条文引用（包括法条名称、编号和内容）
+   - 修改的法律依据和必要性
+   - 修改后的法律效果
 
 请返回JSON格式：
 {
   "optimized_text": "优化后的合同文本",
   "modifications": [
     {
-      "original_text": "原文",
-      "modified_text": "修改后",
+      "original_text": "原文内容（必须与合同中的原文完全匹配）",
+      "modified_text": "修改后的内容",
       "legal_basis": "法律依据（具体条文）",
-      "reason": "修改原因"
+      "reason": "修改原因",
+      "highlight_type": "modify|add|delete",
+      "position": "修改位置描述"
     }
   ],
   "summary": "优化总结"
@@ -414,19 +442,30 @@ ${text}
 合同内容：${optimizedText}
 
 要求：
-1. 保持法律条款的准确性
+1. 保持法律条款的准确性和专业性
 2. 确保术语符合${primaryLawName}法律体系`;
     if (secondaryLawName) {
       prompt += `和${secondaryLawName}法律体系`;
     }
     prompt += `
-3. 保留所有法律引用
+3. 保留所有法律引用和法条编号
+4. 翻译修改建议和法律依据
+5. 使用目标语言中对应的法律术语
+6. 确保翻译后的合同在两个法律体系下都具有法律效力
 
 请返回JSON格式：
 {
   "target_language": "${targetLanguage}",
   "translated_text": "翻译后的文本",
-  "translated_modifications": ["翻译的修改点"]
+  "translated_modifications": [
+    {
+      "original_text": "原文",
+      "translated_text": "翻译后",
+      "legal_basis": "法律依据（具体条文）",
+      "reason": "修改原因"
+    }
+  ],
+  "translated_legal_basis": "翻译后的法律依据总结"
 }`;
 
     return prompt;
@@ -438,6 +477,9 @@ ${text}
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const parsed = JSON.parse(jsonMatch[0]);
+        
+        console.log('AI服务解析的法律分析结果:', parsed);
+        console.log('matched_articles:', parsed.matched_articles);
         
         return {
           compliance_score: Math.max(0, Math.min(100, parseInt(parsed.compliance_score) || 0)),
@@ -752,6 +794,11 @@ ${text}
         }
       );
 
+      // 检查响应数据结构
+      if (!response.data || !response.data.choices || !response.data.choices[0] || !response.data.choices[0].message) {
+        throw new Error('AI响应数据结构异常');
+      }
+      
       const aiResponse = response.data.choices[0].message.content;
       console.log('合同优化AI响应:', aiResponse);
       return this.parseOptimizationResponse(aiResponse);
@@ -765,6 +812,33 @@ ${text}
         error: error.message
       };
     }
+  }
+
+  // 构建翻译提示
+  buildTranslationPromptWithContext(text, targetLanguage, context, primaryLaw, secondaryLaw) {
+    const prompt = `请将以下法律合同从中文翻译成${targetLanguage === 'en' ? '英文' : targetLanguage}。
+
+合同内容：
+${text}
+
+法律体系背景：
+- 主要法律体系：${this.getLawDisplayName(primaryLaw)}
+- 次要法律体系：${this.getLawDisplayName(secondaryLaw)}
+
+翻译要求：
+1. 保持法律术语的准确性和专业性
+2. 确保合同条款的完整性和一致性
+3. 使用目标语言的标准法律表达方式
+4. 保持原文的格式和结构
+
+请返回JSON格式的翻译结果：
+{
+  "translated_text": "翻译后的完整合同文本",
+  "target_language": "${targetLanguage}",
+  "status": "success"
+}`;
+
+    return prompt;
   }
 
   // 基于上下文的合同翻译
@@ -797,6 +871,11 @@ ${text}
         }
       );
 
+      // 检查响应数据结构
+      if (!response.data || !response.data.choices || !response.data.choices[0] || !response.data.choices[0].message) {
+        throw new Error('AI响应数据结构异常');
+      }
+      
       const aiResponse = response.data.choices[0].message.content;
       console.log('合同翻译AI响应:', aiResponse);
       return this.parseTranslationResponse(aiResponse);
@@ -808,6 +887,93 @@ ${text}
         translated_modifications: [],
         status: 'failed',
         error: error.message
+      };
+    }
+  }
+
+  // 获取法律体系显示名称
+  getLawDisplayName(lawCode) {
+    const lawNames = {
+      'china': '中华人民共和国法律',
+      'usa': '美国法律',
+      'eu': '欧盟法律',
+      'uk': '英国法律',
+      'japan': '日本法律',
+      'singapore': '新加坡法律'
+    };
+    return lawNames[lawCode] || lawCode;
+  }
+
+  // 解析翻译响应
+  parseTranslationResponse(aiResponse) {
+    try {
+      // 清理AI响应，移除可能的反引号和多余字符
+      let cleanedResponse = aiResponse.trim();
+      
+      // 如果响应以反引号开始和结束，移除它们
+      if (cleanedResponse.startsWith('`') && cleanedResponse.endsWith('`')) {
+        cleanedResponse = cleanedResponse.slice(1, -1);
+      }
+      
+      // 如果响应以```json开始，找到对应的结束位置
+      if (cleanedResponse.startsWith('```json')) {
+        const endIndex = cleanedResponse.lastIndexOf('```');
+        if (endIndex > 7) {
+          cleanedResponse = cleanedResponse.substring(7, endIndex);
+        }
+      }
+      
+      // 尝试解析JSON响应
+      const parsed = JSON.parse(cleanedResponse);
+      
+      if (parsed.translated_text) {
+        return {
+          target_language: parsed.target_language || 'en',
+          translated_text: parsed.translated_text,
+          status: 'success'
+        };
+      } else {
+        throw new Error('AI响应中缺少翻译文本');
+      }
+    } catch (parseError) {
+      console.error('解析翻译响应失败:', parseError);
+      console.log('原始AI响应:', aiResponse);
+      
+      // 如果JSON解析失败，尝试多种方式提取翻译文本
+      let translatedText = '';
+      
+      // 方法1：尝试提取translated_text字段
+      const textMatch1 = aiResponse.match(/translated_text["\s]*:["\s]*"([^"]+)"/);
+      if (textMatch1) {
+        translatedText = textMatch1[1];
+      }
+      
+      // 方法2：尝试提取被反引号包围的内容
+      const textMatch2 = aiResponse.match(/`([^`]+)`/);
+      if (textMatch2 && !translatedText) {
+        translatedText = textMatch2[1];
+      }
+      
+      // 方法3：尝试提取JSON对象中的文本内容
+      const textMatch3 = aiResponse.match(/"([^"]{10,})"/);
+      if (textMatch3 && !translatedText) {
+        translatedText = textMatch3[1];
+      }
+      
+      if (translatedText) {
+        return {
+          target_language: 'en',
+          translated_text: translatedText,
+          status: 'success'
+        };
+      }
+      
+      // 如果都失败了，返回错误
+      return {
+        target_language: 'en',
+        translated_text: '',
+        status: 'failed',
+        error: '无法解析AI翻译响应'
       };
     }
   }

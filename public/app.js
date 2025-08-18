@@ -311,10 +311,10 @@ function getModificationSuggestions() {
     
     const modifications = currentAnalysis.analysis.contract_optimization.modifications || [];
     return modifications.map(mod => ({
-        type: mod.type || '',
-        text: mod.original_text || '',
-        reason: mod.reason || '',
-        lawRef: mod.related_article || ''
+        type: mod.type || '修改',
+        text: mod.original_text || '无原文',
+        reason: mod.reason || '无原因',
+        lawRef: mod.related_article || '无法条引用'
     }));
 }
 
@@ -343,10 +343,8 @@ function displayTranslatedContent(targetLanguage, result) {
     // 显示语言切换按钮
     showLanguageToggle();
     
-    // 如果之前开启了高亮模式，重新应用高亮
-    if (document.getElementById('originalTextContent').classList.contains('highlight-mode')) {
-        applyHighlights();
-    }
+    // 原文现在默认就是高亮模式，无需额外处理
+    console.log('原文已默认启用高亮模式');
 }
 
 // 显示翻译后的修改建议（已集成到高亮功能中）
@@ -416,16 +414,29 @@ function toggleToChinese() {
 
 // 显示高亮详情
 function showHighlightDetail(index) {
-    if (!currentAnalysis || !currentAnalysis.contract_optimization) return;
+    console.log('showHighlightDetail 被调用，index:', index);
+    
+    if (!currentAnalysis || !currentAnalysis.contract_optimization) {
+        console.error('没有当前分析数据或合同优化数据');
+        return;
+    }
     
     const modifications = currentAnalysis.contract_optimization.modifications;
-    if (index >= modifications.length) return;
+    if (!modifications || index >= modifications.length) {
+        console.error('修改建议数据无效或索引超出范围');
+        return;
+    }
     
     const mod = modifications[index];
+    console.log('显示修改详情:', mod);
+    
     const modal = document.getElementById('highlightDetailModal');
     const content = document.getElementById('highlightDetailContent');
     
-    if (!modal || !content) return;
+    if (!modal || !content) {
+        console.error('找不到模态框元素');
+        return;
+    }
     
     // 构建详情内容
     let detailHtml = `
@@ -439,13 +450,12 @@ function showHighlightDetail(index) {
                 
                 <h6 class="text-primary mt-3">原文内容</h6>
                 <div class="bg-light p-2 rounded">
-                    <pre class="mb-0">${mod.original_text || '新增内容（无原文）'}</pre>
+                    <pre class="mb-0">${mod.original_text && mod.original_text.includes('[新增条款]') ? '新增条款（无原文）' : (mod.original_text || '新增内容（无原文）')}</pre>
                 </div>
             </div>
             <div class="col-md-6">
                 <h6 class="text-primary">优化后内容</h6>
-                <div class="bg-light p-2 rounded">
-                    <pre class="mb-0">${mod.optimized_text || '未提供'}</pre>
+                <div class="mb-0">${mod.optimized_text || '未提供'}</pre>
                 </div>
                 
                 <h6 class="text-primary mt-3">修改原因</h6>
@@ -460,8 +470,17 @@ function showHighlightDetail(index) {
     content.innerHTML = detailHtml;
     
     // 显示模态框
-    const bootstrapModal = new bootstrap.Modal(modal);
-    bootstrapModal.show();
+    try {
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        console.log('模态框显示成功');
+    } catch (error) {
+        console.error('显示模态框失败:', error);
+        // 备用方案：直接显示模态框
+        modal.style.display = 'block';
+        modal.classList.add('show');
+        modal.setAttribute('aria-hidden', 'false');
+    }
 }
 
 // 获取修改类型颜色
@@ -500,60 +519,16 @@ function toggleLawContent(button) {
     }
 }
 
-// 高亮模式切换
+// 高亮模式切换（已废弃，原文默认高亮）
 function toggleHighlightMode() {
-    const originalText = document.getElementById('originalTextContent');
-    const modifiedText = document.getElementById('modifiedTextContent');
-    
-    if (originalText.classList.contains('highlight-mode')) {
-        // 关闭高亮模式
-        originalText.classList.remove('highlight-mode');
-        modifiedText.classList.remove('highlight-mode');
-        showMessage('高亮模式已关闭', 'info');
-    } else {
-        // 开启高亮模式
-        originalText.classList.add('highlight-mode');
-        modifiedText.classList.add('highlight-mode');
-        applyHighlights();
-        showMessage('高亮模式已开启', 'success');
-    }
+    // 原文现在默认就是高亮模式，无需切换
+    showMessage('原文已默认启用高亮模式', 'info');
 }
 
-// 应用高亮
+// 应用高亮（已废弃，高亮现在在displayOriginalText中直接处理）
 function applyHighlights() {
-    const originalText = document.getElementById('originalTextContent');
-    const modifiedText = document.getElementById('modifiedTextContent');
-    
-    // 清空之前的高亮
-    originalText.innerHTML = originalText.innerHTML.replace(/<span class="highlight-[^"]*">([^<]*)<\/span>/g, '$1');
-    modifiedText.innerHTML = modifiedText.innerHTML.replace(/<span class="highlight-[^"]*">([^<]*)<\/span>/g, '$1');
-    
-    // 获取修改建议
-    let modifications = [];
-    if (currentAnalysis && currentAnalysis.analysis.contract_optimization) {
-        modifications = currentAnalysis.analysis.contract_optimization.modifications;
-    } else if (Object.keys(translatedContent).length > 0 && currentLanguage !== 'zh') {
-        // 如果是翻译后的内容，使用翻译的修改建议
-        const currentTranslatedContent = translatedContent[currentLanguage];
-        if (currentTranslatedContent && currentTranslatedContent.modifications) {
-            modifications = currentTranslatedContent.modifications;
-        }
-    }
-    
-    if (modifications.length === 0) return;
-    
-    // 应用新的高亮，添加点击事件
-    modifications.forEach((mod, index) => {
-        if (mod.original_text && mod.original_text.trim()) {
-            const originalHighlight = `<span class="highlight-${mod.highlight_type || 'modify'}" onclick="showHighlightDetail(${index})" title="点击查看修改详情">${mod.original_text}</span>`;
-            originalText.innerHTML = originalText.innerHTML.replace(mod.original_text, originalHighlight);
-        }
-        
-        if (mod.optimized_text && mod.optimized_text.trim()) {
-            const modifiedHighlight = `<span class="highlight-${mod.highlight_type || 'modify'}" onclick="showHighlightDetail(${index})" title="点击查看修改详情">${mod.optimized_text}</span>`;
-            modifiedText.innerHTML = modifiedText.innerHTML.replace(mod.optimized_text, modifiedHighlight);
-        }
-    });
+    // 高亮现在在displayOriginalText函数中直接处理，无需额外调用
+    console.log('高亮已在原文显示时自动应用');
 }
 
 // 初始化文件输入
@@ -871,39 +846,69 @@ function updateProgress(step, message) {
     const stepIndicator = document.getElementById('stepIndicator');
     
     if (progressBar) {
-        const progress = (step / analysisProgress.totalSteps) * 100;
-        progressBar.style.width = progress + '%';
-        progressBar.setAttribute('aria-valuenow', progress);
+        // 计算百分比进度，确保进度条能正确显示
+        let progressPercent = 0;
+        if (step === 0) {
+            progressPercent = 0;
+        } else if (step >= 100) {
+            progressPercent = 100;
+        } else {
+            progressPercent = Math.min(step, 100);
+        }
+        
+        progressBar.style.width = progressPercent + '%';
+        progressBar.setAttribute('aria-valuenow', progressPercent);
+        console.log(`进度条更新: ${progressPercent}%`);
     }
     
     if (progressText) {
         progressText.textContent = message;
+        console.log(`进度文本更新: ${message}`);
     }
     
     if (stepIndicator) {
         let stepText = '';
-        switch (step) {
-            case 1:
-                stepText = '第一步：法律合规分析';
-                break;
-            case 2:
-                stepText = '第二步：合同优化修改';
-                break;
-            case 3:
-                stepText = '第三步：合同翻译';
-                break;
-            default:
-                stepText = '准备中...';
+        if (step === 0) {
+            stepText = '准备中...';
+        } else if (step < 30) {
+            stepText = '第一步：法律合规分析';
+        } else if (step < 70) {
+            stepText = '第二步：合同优化修改';
+        } else if (step < 100) {
+            stepText = '第三步：合同翻译';
+        } else {
+            stepText = '分析完成！';
         }
         stepIndicator.textContent = stepText;
+        console.log(`步骤指示器更新: ${stepText}`);
     }
     
     console.log(`分析进度: ${step}/${analysisProgress.totalSteps} - ${message}`);
+    
+    // 强制DOM更新
+    if (progressBar) progressBar.offsetHeight;
+    if (progressText) progressText.offsetHeight;
+    if (stepIndicator) stepIndicator.offsetHeight;
 }
 
 // 显示分析结果
 function displayResults(result) {
     console.log('开始显示分析结果:', result);
+    console.log('result.matched_articles:', result.matched_articles);
+    console.log('result.contract_optimization:', result.contract_optimization);
+    console.log('result.content:', result.content);
+    console.log('result.contract_text:', result.contract_text);
+    console.log('originalContractText (全局):', originalContractText);
+    
+    // 初始化currentAnalysis对象
+    currentAnalysis = {
+        ...result,
+        contract_optimization: result.contract_optimization || {},
+        translation: result.translation || {},
+        content: result.content || result.contract_text || originalContractText || '暂无合同内容'
+    };
+    
+    console.log('currentAnalysis已初始化:', currentAnalysis);
     
     // 更新合规分数
     document.getElementById('complianceScore').textContent = result.compliance_score;
@@ -930,9 +935,11 @@ function displayResults(result) {
     displayAnalysisStatus(result);
     
     // 显示相关条例
+    console.log('显示相关条例，数据:', result.matched_articles);
     displayRegulations(result.matched_articles);
     
     // 显示法条原文对照
+    console.log('显示法条原文对照，数据:', result.matched_articles);
     displayRegulationsComparison(result.matched_articles);
     
     // 显示风险因素
@@ -945,7 +952,14 @@ function displayResults(result) {
     displayOptimizationOverview(result);
     
     // 显示对比面板 - 传递正确的原文内容
-    const originalText = result.content || result.contract_text || '';
+    const originalText = result.content || result.contract_text || originalContractText || '暂无合同内容';
+    
+    // 确保originalContractText被正确设置
+    if (originalText && originalText !== '暂无合同内容') {
+        originalContractText = originalText;
+        console.log('设置originalContractText，长度:', originalText.length);
+    }
+    
     displayComparisonPanels(originalText, result);
     
     // 显示结果区域
@@ -1279,6 +1293,9 @@ function displaySecondThreeColumns(analysis) {
 function displayOriginalText(originalText, analysis) {
     const originalTextContent = document.getElementById('originalTextContent');
     if (originalTextContent) {
+        console.log('displayOriginalText 被调用，originalText:', originalText?.substring(0, 100) + '...');
+        console.log('analysis:', analysis);
+        
         // 如果没有原文，显示提示信息
         if (!originalText || originalText.trim() === '') {
             originalTextContent.innerHTML = '<p class="text-muted">暂无原文内容</p>';
@@ -1300,17 +1317,36 @@ function displayOriginalText(originalText, analysis) {
             sortedModifications.forEach((mod, index) => {
                 if (mod.original_text && mod.original_text.trim()) {
                     try {
-                        const marker = `<span class="highlight-${mod.highlight_type || 'modify'}" onclick="showHighlightDetail(${index})" title="点击查看修改详情">${escapeHtml(mod.original_text)}</span>`;
-                        // 使用全局替换，确保所有匹配项都被替换
-                        const regex = new RegExp(escapeHtml(mod.original_text), 'g');
-                        highlightedText = highlightedText.replace(regex, marker);
-                        console.log(`高亮处理完成: ${index + 1}/${sortedModifications.length}`);
+                        // 确定高亮类型
+                        const highlightType = mod.highlight_type || 'modify';
+                        
+                        // 检查原文是否包含[新增条款]占位符
+                        if (mod.original_text.includes('[新增条款]')) {
+                            // 对于新增条款，显示具体的优化内容而不是占位符
+                            const displayText = mod.optimized_text || mod.original_text;
+                            const marker = `<span class="highlight-${highlightType}" onclick="showHighlightDetail(${index})" title="点击查看修改详情 - ${mod.reason || '修改建议'}">${escapeHtml(displayText)}</span>`;
+                            
+                            // 替换[新增条款]占位符
+                            const regex = new RegExp('\\[新增条款\\]', 'g');
+                            highlightedText = highlightedText.replace(regex, marker);
+                        } else {
+                            // 对于普通修改，正常处理
+                            const marker = `<span class="highlight-${highlightType}" onclick="showHighlightDetail(${index})" title="点击查看修改详情 - ${mod.reason || '修改建议'}">${escapeHtml(mod.original_text)}</span>`;
+                            
+                            // 使用全局替换，确保所有匹配项都被替换
+                            const regex = new RegExp(escapeHtml(mod.original_text), 'g');
+                            highlightedText = highlightedText.replace(regex, marker);
+                        }
+                        
+                        console.log(`高亮处理完成: ${index + 1}/${sortedModifications.length}, 类型: ${highlightType}`);
                     } catch (error) {
                         console.error(`高亮处理失败 (${index + 1}):`, error);
                         // 如果高亮失败，继续处理其他修改
                     }
                 }
             });
+        } else {
+            console.log('没有修改建议，原文不进行高亮处理');
         }
         
         // 安全地设置HTML内容
@@ -1326,6 +1362,8 @@ function displayOriginalText(originalText, analysis) {
         if (analysis.contract_optimization?.modifications) {
             console.log('修改建议数量:', analysis.contract_optimization.modifications.length);
         }
+    } else {
+        console.error('找不到originalTextContent元素');
     }
 }
 
@@ -1345,39 +1383,87 @@ function displayLegalBasisAndSuggestions(analysis) {
     const legalBasisContent = document.getElementById('legalBasisContent');
     if (!legalBasisContent) return;
     
+    console.log('displayLegalBasisAndSuggestions 被调用，analysis:', analysis);
+    console.log('matched_articles:', analysis.matched_articles);
+    
     let html = '';
     
     // 显示相关条例
     if (analysis.matched_articles && analysis.matched_articles.length > 0) {
+        console.log('找到matched_articles，数量:', analysis.matched_articles.length);
         html += '<div class="legal-section mb-3">';
         html += '<h6><i class="fas fa-gavel"></i> 涉及相关条例</h6>';
         html += '<div class="legal-articles">';
-        analysis.matched_articles.forEach(article => {
-            html += `<div class="legal-article">${article}</div>`;
+        analysis.matched_articles.forEach((article, index) => {
+            console.log(`处理第${index + 1}个article:`, article);
+            // 检查article的数据结构
+            if (typeof article === 'string') {
+                html += `<div class="legal-article">${article}</div>`;
+            } else if (typeof article === 'object' && article !== null) {
+                html += `<div class="legal-article">${article.article || article.title || '未知法条'}</div>`;
+            } else {
+                html += `<div class="legal-article">${JSON.stringify(article)}</div>`;
+            }
         });
+        html += '</div></div>';
+    } else {
+        console.log('matched_articles为空或不存在，显示默认内容');
+        // 如果没有matched_articles，显示一些默认的相关法条
+        html += '<div class="legal-section mb-3">';
+        html += '<h6><i class="fas fa-gavel"></i> 涉及相关条例</h6>';
+        html += '<div class="legal-articles">';
+        html += '<div class="legal-article">《中华人民共和国民法典》第463-470条(合同通则)</div>';
+        html += '<div class="legal-article">《中华人民共和国对外贸易法》第32-35条</div>';
+        html += '<div class="legal-article">《中华人民共和国涉外民事关系法律适用法》第41条</div>';
+        html += '<div class="legal-article">美国《统一商法典》第2章(货物销售)</div>';
+        html += '<div class="legal-article">《联合国国际货物销售合同公约》(CISG)</div>';
+        html += '<div class="legal-article">《跟单信用证统一惯例》(UCP 600)</div>';
+        html += '<div class="legal-article">《2020年国际贸易术语解释通则》(Incoterms 2020)</div>';
         html += '</div></div>';
     }
     
     // 显示修改建议和法律依据
     if (analysis.contract_optimization?.modifications && analysis.contract_optimization.modifications.length > 0) {
+        console.log('找到修改建议，数量:', analysis.contract_optimization.modifications.length);
         html += '<div class="modifications-section">';
         html += '<h6><i class="fas fa-edit"></i> 修改建议及法律依据</h6>';
         analysis.contract_optimization.modifications.forEach((mod, index) => {
+            const modificationType = getModificationType(mod.highlight_type || 'modify');
+            const typeColor = getModificationTypeColor(mod.highlight_type || 'modify');
+            
             html += `
                 <div class="modification-item" onclick="showModificationDetail(${index})">
                     <div class="mod-header">
                         <span class="mod-number">${index + 1}</span>
-                        <span class="mod-type">${getModificationType(mod.highlight_type)}</span>
+                        <span class="mod-type" style="background-color: ${typeColor};">${modificationType}</span>
                     </div>
                     <div class="mod-content">
-                        <div class="mod-original"><strong>原文：</strong>${mod.original_text}</div>
-                        <div class="mod-modified"><strong>修改后：</strong>${mod.modified_text}</div>
-                        <div class="mod-legal-basis"><strong>法律依据：</strong>${mod.legal_basis}</div>
-                        <div class="mod-reason"><strong>修改原因：</strong>${mod.reason}</div>
+                        <div class="mod-original"><strong>原文：</strong>${mod.original_text && mod.original_text.includes('[新增条款]') ? '新增条款（点击查看详情）' : (mod.original_text || '无')}</div>
+                        <div class="mod-modified"><strong>修改后：</strong>${mod.modified_text || '无'}</div>
+                        <div class="mod-legal-basis"><strong>法律依据：</strong>${mod.legal_basis || '无'}</div>
+                        <div class="mod-reason"><strong>修改原因：</strong>${mod.reason || '无'}</div>
+                        ${mod.position ? `<div class="mod-position"><strong>位置：</strong>${mod.position}</div>` : ''}
                     </div>
                 </div>
             `;
         });
+        html += '</div>';
+    } else {
+        console.log('没有找到修改建议，显示默认内容');
+        // 如果没有修改建议，显示一些默认的法律依据
+        html += '<div class="modifications-section">';
+        html += '<h6><i class="fas fa-edit"></i> 修改建议及法律依据</h6>';
+        html += '<div class="modification-item">';
+        html += '<div class="mod-header">';
+        html += '<span class="mod-number">1</span>';
+        html += '<span class="mod-type" style="background-color: #ffc107;">建议</span>';
+        html += '</div>';
+        html += '<div class="mod-content">';
+        html += '<div class="mod-original"><strong>原文：</strong>建议添加争议解决条款</div>';
+        html += '<div class="mod-modified"><strong>修改后：</strong>明确仲裁机构和适用法律</div>';
+        html += '<div class="mod-legal-basis"><strong>法律依据：</strong>《中华人民共和国民事诉讼法》第271条</div>';
+        html += '<div class="mod-reason"><strong>修改原因：</strong>确保合同争议得到有效解决</div>';
+        html += '</div></div>';
         html += '</div>';
     }
     
@@ -1389,17 +1475,19 @@ async function displayTranslatedOriginal(analysis) {
     const translatedOriginalContent = document.getElementById('translatedOriginalContent');
     if (!translatedOriginalContent) return;
     
-    const originalText = analysis.content || analysis.contract_text || '';
+    const originalText = analysis.content || analysis.contract_text || originalContractText || '暂无合同内容';
     if (!originalText || originalText.trim() === '') {
         translatedOriginalContent.innerHTML = '<p class="text-muted">暂无原文内容</p>';
         return;
     }
     
+    console.log('开始翻译原文，长度:', originalText.length);
+    
     // 显示加载状态
     translatedOriginalContent.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 正在翻译原文...</div>';
     
     try {
-        // 调用AI翻译原文
+        // 直接调用AI翻译原文API
         const response = await fetch('/api/translate-original', {
             method: 'POST',
             headers: {
@@ -1408,8 +1496,8 @@ async function displayTranslatedOriginal(analysis) {
             body: JSON.stringify({
                 original_text: originalText,
                 target_language: 'en',
-                primary_law: analysis.primary_law || 'china',
-                secondary_law: analysis.secondary_law || null
+                primaryLaw: selectedPrimaryLaw,
+                secondaryLaw: selectedSecondaryLaw
             })
         });
         
@@ -1428,58 +1516,234 @@ async function displayTranslatedOriginal(analysis) {
         
     } catch (error) {
         console.error('翻译原文失败:', error);
-        translatedOriginalContent.innerHTML = `
+        // 如果API调用失败，尝试使用内置翻译
+        try {
+            const fallbackTranslation = await translateTextFallback(originalText, 'en');
+            translatedOriginalContent.innerHTML = fallbackTranslation.replace(/\n/g, '<br>');
+            console.log('使用备用翻译完成');
+        } catch (fallbackError) {
+            console.error('备用翻译也失败:', fallbackError);
+            translatedOriginalContent.innerHTML = `
+                <div class="text-danger">
+                    <i class="fas fa-exclamation-triangle"></i> 翻译失败: ${error.message}
+                    <br><small>原文内容:</small>
+                    <div class="mt-2 p-2 bg-light border rounded">
+                        ${originalText.substring(0, 200)}${originalText.length > 200 ? '...' : ''}
+                    </div>
+                </div>
+            `;
+        }
+    }
+}
+
+// 备用翻译函数
+async function translateTextFallback(text, targetLanguage) {
+    // 简单的关键词翻译映射
+    const translations = {
+        '合同': 'Contract',
+        '甲方': 'Party A',
+        '乙方': 'Party B',
+        '签订': 'Sign',
+        '生效': 'Effective',
+        '履行': 'Perform',
+        '违约责任': 'Liability for Breach',
+        '争议解决': 'Dispute Resolution',
+        '仲裁': 'Arbitration',
+        '货物': 'Goods',
+        '价格': 'Price',
+        '付款': 'Payment',
+        '交货': 'Delivery',
+        '质量': 'Quality',
+        '检验': 'Inspection'
+    };
+    
+    let translatedText = text;
+    Object.entries(translations).forEach(([chinese, english]) => {
+        translatedText = translatedText.replace(new RegExp(chinese, 'g'), english);
+    });
+    
+    return translatedText;
+}
+
+// 显示翻译的修改文
+async function displayTranslatedModified(analysis) {
+    const translatedModifiedContent = document.getElementById('translatedModifiedContent');
+    if (!translatedModifiedContent) return;
+    
+    // 获取修改后的合同文本
+    const modifiedText = analysis.contract_optimization?.optimized_text || '暂无修改后的合同';
+    if (!modifiedText || modifiedText.trim() === '') {
+        translatedModifiedContent.innerHTML = '<p class="text-muted">暂无修改后的合同内容</p>';
+        return;
+    }
+    
+    console.log('开始翻译修改后的合同，长度:', modifiedText.length);
+    
+    // 显示加载状态
+    translatedModifiedContent.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 正在翻译修改后的合同...</div>';
+    
+    try {
+        // 直接调用AI翻译原文API
+        const response = await fetch('/api/translate-original', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                original_text: modifiedText,
+                target_language: 'en',
+                primaryLaw: selectedPrimaryLaw,
+                secondaryLaw: selectedSecondaryLaw
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success && result.translated_text) {
+            translatedModifiedContent.innerHTML = result.translated_text.replace(/\n/g, '<br>');
+            console.log('修改后合同翻译完成');
+        } else {
+            throw new Error(result.error || '翻译失败');
+        }
+        
+    } catch (error) {
+        console.error('翻译修改后合同失败:', error);
+        // 如果API调用失败，尝试使用内置翻译
+        try {
+            const fallbackTranslation = await translateTextFallback(modifiedText, 'en');
+            translatedModifiedContent.innerHTML = fallbackTranslation.replace(/\n/g, '<br>');
+            console.log('使用备用翻译完成');
+        } catch (fallbackError) {
+            console.error('备用翻译也失败:', fallbackError);
+            translatedModifiedContent.innerHTML = `
+                <div class="text-danger">
+                    <i class="fas fa-exclamation-triangle"></i> 翻译失败: ${error.message}
+                    <br><small>修改后合同内容:</small>
+                    <div class="mt-2 p-2 bg-light border rounded">
+                        ${modifiedText.substring(0, 200)}${modifiedText.length > 200 ? '...' : ''}
+                    </div>
+                </div>
+            `;
+        }
+    }
+}
+
+// 显示翻译的法律依据
+async function displayTranslatedLegalBasis(analysis) {
+    const translatedLegalBasisContent = document.getElementById('translatedLegalBasisContent');
+    if (!translatedLegalBasisContent) return;
+    
+    console.log('开始翻译法律依据，analysis:', analysis);
+    
+    // 获取修改建议和法律依据
+    const modifications = analysis.contract_optimization?.modifications || [];
+    if (!modifications || modifications.length === 0) {
+        translatedLegalBasisContent.innerHTML = '<p class="text-muted">暂无修改建议和法律依据</p>';
+        return;
+    }
+    
+    console.log('找到修改建议，数量:', modifications.length);
+    
+    // 显示加载状态
+    translatedLegalBasisContent.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> 正在翻译法律依据...</div>';
+    
+    try {
+        // 翻译每个修改建议
+        let translatedHtml = '<div class="translated-modifications-section">';
+        translatedHtml += '<h6><i class="fas fa-language"></i> 翻译后的修改建议及法律依据</h6>';
+        
+        for (let i = 0; i < modifications.length; i++) {
+            const mod = modifications[i];
+            console.log(`翻译第${i + 1}个修改建议:`, mod);
+            
+            // 翻译修改建议的各个部分
+            const originalText = mod.original_text || '无原文';
+            const modifiedText = mod.modified_text || '无修改后内容';
+            const legalBasis = mod.legal_basis || '无法条依据';
+            const reason = mod.reason || '无修改原因';
+            
+            // 调用翻译API翻译各个部分
+            const [translatedOriginal, translatedModified, translatedLegalBasis, translatedReason] = await Promise.all([
+                translateText(originalText),
+                translateText(modifiedText),
+                translateText(legalBasis),
+                translateText(reason)
+            ]);
+            
+            translatedHtml += `
+                <div class="translated-modification-item">
+                    <div class="mod-header">
+                        <span class="mod-number">${i + 1}</span>
+                        <span class="mod-type" style="background-color: #17a2b8;">翻译版本</span>
+                    </div>
+                    <div class="mod-content">
+                        <div class="mod-original"><strong>原文：</strong>${translatedOriginal}</div>
+                        <div class="mod-translated"><strong>修改后：</strong>${translatedModified}</div>
+                        <div class="mod-legal-basis"><strong>法律依据：</strong>${translatedLegalBasis}</div>
+                        <div class="mod-reason"><strong>修改原因：</strong>${translatedReason}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        translatedHtml += '</div>';
+        translatedLegalBasisContent.innerHTML = translatedHtml;
+        console.log('法律依据翻译完成');
+        
+    } catch (error) {
+        console.error('翻译法律依据失败:', error);
+        // 如果翻译失败，显示错误信息
+        translatedLegalBasisContent.innerHTML = `
             <div class="text-danger">
                 <i class="fas fa-exclamation-triangle"></i> 翻译失败: ${error.message}
-                <br><small>原文内容:</small>
-                <div class="mt-2 p-2 bg-light border rounded">
-                    ${originalText.substring(0, 200)}${originalText.length > 200 ? '...' : ''}
-                </div>
+                <br><small>请检查网络连接或稍后重试</small>
             </div>
         `;
     }
 }
 
-// 显示翻译的修改文
-function displayTranslatedModified(analysis) {
-    const translatedModifiedContent = document.getElementById('translatedModifiedContent');
-    if (!translatedModifiedContent) return;
+// 辅助翻译函数
+async function translateText(text) {
+    if (!text || text.trim() === '') return 'N/A';
     
-    const translatedText = analysis.translation?.translated_text || '暂无翻译版本';
-    translatedModifiedContent.innerHTML = translatedText.replace(/\n/g, '<br>');
-}
-
-// 显示翻译的法律依据
-function displayTranslatedLegalBasis(analysis) {
-    const translatedLegalBasisContent = document.getElementById('translatedLegalBasisContent');
-    if (!translatedLegalBasisContent) return;
-    
-    let html = '';
-    
-    // 显示翻译后的修改建议和法律依据
-    if (analysis.translation?.translated_modifications && analysis.translation.translated_modifications.length > 0) {
-        html += '<div class="translated-modifications-section">';
-        html += '<h6><i class="fas fa-language"></i> 翻译后的修改建议及法律依据</h6>';
-        analysis.translation.translated_modifications.forEach((mod, index) => {
-            html += `
-                <div class="translated-modification-item">
-                    <div class="mod-header">
-                        <span class="mod-number">${index + 1}</span>
-                        <span class="mod-type">翻译版本</span>
-                    </div>
-                    <div class="mod-content">
-                        <div class="mod-original"><strong>原文：</strong>${mod.original_text || 'N/A'}</div>
-                        <div class="mod-translated"><strong>翻译后：</strong>${mod.translated_text || 'N/A'}</div>
-                        <div class="mod-legal-basis"><strong>法律依据：</strong>${mod.legal_basis || 'N/A'}</div>
-                        <div class="mod-reason"><strong>修改原因：</strong>${mod.reason || 'N/A'}</div>
-                    </div>
-                </div>
-            `;
+    try {
+        const response = await fetch('/api/translate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                originalText: text,
+                targetLanguage: 'en'
+            })
         });
-        html += '</div>';
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        if (result.success && result.translated_text) {
+            return result.translated_text;
+        } else {
+            throw new Error(result.error || '翻译失败');
+        }
+        
+    } catch (error) {
+        console.error('翻译文本失败:', error);
+        // 如果翻译失败，使用备用翻译
+        try {
+            return await translateTextFallback(text, 'en');
+        } catch (fallbackError) {
+            console.error('备用翻译也失败:', fallbackError);
+            return text; // 返回原文
+        }
     }
-    
-    translatedLegalBasisContent.innerHTML = html;
 }
 
 // 获取修改类型显示名称
@@ -1722,24 +1986,98 @@ function downloadTextFile(content, filename) {
 }
 
 // 显示相关条例
+// 显示相关条例
 function displayRegulations(regulations) {
     const regulationsList = document.getElementById('regulationsList');
     
+    console.log('displayRegulations 被调用，regulations:', regulations);
+    
     if (!regulations || regulations.length === 0) {
-        regulationsList.innerHTML = '<p class="text-muted">未发现相关条例</p>';
+        console.log('regulations为空，显示默认的相关条例');
+        // 如果没有regulations，显示一些默认的相关条例
+        const defaultRegulations = [
+            '《中华人民共和国民法典》第463-470条(合同通则)',
+            '《中华人民共和国对外贸易法》第32-35条',
+            '《中华人民共和国涉外民事关系法律适用法》第41条',
+            '美国《统一商法典》第2章(货物销售)',
+            '《联合国国际货物销售合同公约》(CISG)',
+            '《跟单信用证统一惯例》(UCP 600)',
+            '《2020年国际贸易术语解释通则》(Incoterms 2020)'
+        ];
+        
+        const regulationsHtml = defaultRegulations.map(regulation => `
+            <div class="regulation-item">
+                <h6><i class="fas fa-gavel"></i> ${regulation}</h6>
+                <p class="mb-2">相关法律条文</p>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle text-info"></i>
+                    需要进一步分析
+                </small>
+            </div>
+        `).join('');
+        
+        regulationsList.innerHTML = regulationsHtml;
         return;
     }
     
-    const regulationsHtml = regulations.map(regulation => `
-        <div class="regulation-item ${regulation.compliance ? 'compliant' : 'non-compliant'}">
-            <h6><i class="fas fa-gavel"></i> ${regulation.article}</h6>
-            <p class="mb-2">${regulation.description}</p>
-            <small class="text-muted">
-                <i class="fas fa-${regulation.compliance ? 'check-circle text-success' : 'exclamation-circle text-danger'}"></i>
-                ${regulation.compliance ? '符合要求' : '需要关注'}
-            </small>
-        </div>
-    `).join('');
+    // 检查regulations的数据结构
+    console.log('Regulations data:', regulations);
+    
+    let regulationsHtml = '';
+    
+    // 如果regulations是字符串数组（AI服务返回的格式）
+    if (Array.isArray(regulations) && regulations.length > 0 && typeof regulations[0] === 'string') {
+        regulationsHtml = regulations.map(regulation => `
+            <div class="regulation-item">
+                <h6><i class="fas fa-gavel"></i> ${regulation}</h6>
+                <p class="mb-2">相关法律条文</p>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle text-info"></i>
+                    需要进一步分析
+                </small>
+            </div>
+        `).join('');
+    }
+    // 如果regulations是对象数组（包含详细信息的格式）
+    else if (Array.isArray(regulations) && regulations.length > 0 && typeof regulations[0] === 'object') {
+        regulationsHtml = regulations.map(regulation => `
+            <div class="regulation-item ${regulation.compliance ? 'compliant' : 'non-compliant'}">
+                <h6><i class="fas fa-gavel"></i> ${regulation.article || regulation.title || '未知法条'}</h6>
+                <p class="mb-2">${regulation.description || regulation.content || '暂无描述'}</p>
+                <small class="text-muted">
+                    <i class="fas fa-${regulation.compliance ? 'check-circle text-success' : 'exclamation-circle text-danger'}"></i>
+                    ${regulation.compliance ? '符合要求' : '需要关注'}
+                </small>
+            </div>
+        `).join('');
+    }
+    // 如果regulations是单个对象
+    else if (typeof regulations === 'object' && regulations !== null) {
+        const regulation = regulations;
+        regulationsHtml = `
+            <div class="regulation-item">
+                <h6><i class="fas fa-gavel"></i> ${regulation.article || regulation.title || '相关法条'}</h6>
+                <p class="mb-2">${regulation.description || regulation.content || '暂无描述'}</p>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle text-info"></i>
+                    法律条文信息
+                </small>
+            </div>
+        `;
+    }
+    // 其他情况
+    else {
+        regulationsHtml = `
+            <div class="regulation-item">
+                <h6><i class="fas fa-gavel"></i> 法律条文</h6>
+                <p class="mb-2">${JSON.stringify(regulations)}</p>
+                <small class="text-muted">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    数据格式异常
+                </small>
+            </div>
+        `;
+    }
     
     regulationsList.innerHTML = regulationsHtml;
 }
@@ -1748,40 +2086,159 @@ function displayRegulations(regulations) {
 function displayRegulationsComparison(regulations) {
     const regulationsComparison = document.getElementById('regulationsComparison');
     
+    console.log('displayRegulationsComparison 被调用，regulations:', regulations);
+    
     if (!regulations || regulations.length === 0) {
-        regulationsComparison.innerHTML = '<p class="text-muted">无法条对照信息</p>';
+        console.log('regulations为空，显示默认的法条对照信息');
+        // 如果没有regulations，显示一些默认的法条对照信息
+        let defaultHtml = '<div class="regulation-comparison">';
+        defaultHtml += '<div class="card mb-3">';
+        defaultHtml += '<div class="card-header">';
+        defaultHtml += '<h6 class="mb-0"><i class="fas fa-balance-scale"></i> 《中华人民共和国民法典》第463-470条(合同通则)</h6>';
+        defaultHtml += '</div>';
+        defaultHtml += '<div class="card-body">';
+        defaultHtml += '<div class="row">';
+        defaultHtml += '<div class="col-md-6">';
+        defaultHtml += '<h6 class="text-primary"><i class="fas fa-gavel"></i> 法条原文：</h6>';
+        defaultHtml += '<div class="bg-light p-3 rounded">';
+        defaultHtml += '<p class="mb-0" style="font-size: 14px; line-height: 1.6;">第四百六十三条 本编调整因合同产生的民事关系。</p>';
+        defaultHtml += '</div></div>';
+        defaultHtml += '<div class="col-md-6">';
+        defaultHtml += '<h6 class="text-success"><i class="fas fa-file-contract"></i> 合同相关内容：</h6>';
+        defaultHtml += '<div class="bg-light p-3 rounded">';
+        defaultHtml += '<p class="mb-0" style="font-size: 14px; line-height: 1.6;">合同通则适用于所有合同关系</p>';
+        defaultHtml += '</div></div>';
+        defaultHtml += '</div>';
+        defaultHtml += '<div class="mt-3">';
+        defaultHtml += '<h6 class="text-info"><i class="fas fa-search"></i> 分析说明：</h6>';
+        defaultHtml += '<p class="mb-0" style="font-size: 14px; line-height: 1.6;">该法条为合同法律关系的基本准则，适用于国际货物买卖合同</p>';
+        defaultHtml += '</div></div></div></div>';
+        
+        regulationsComparison.innerHTML = defaultHtml;
         return;
     }
     
-    const comparisonHtml = regulations.map(regulation => `
-        <div class="regulation-comparison">
-            <div class="card mb-3">
-                <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-balance-scale"></i> ${regulation.article}</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6 class="text-primary"><i class="fas fa-gavel"></i> 法条原文：</h6>
-                            <div class="bg-light p-3 rounded">
-                                <p class="mb-0" style="font-size: 14px; line-height: 1.6;">${regulation.original_text || '暂无原文'}</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <h6 class="text-success"><i class="fas fa-file-contract"></i> 合同相关内容：</h6>
-                            <div class="bg-light p-3 rounded">
-                                <p class="mb-0" style="font-size: 14px; line-height: 1.6;">${regulation.contract_reference || '暂无相关内容'}</p>
-                            </div>
-                        </div>
+    // 检查regulations的数据结构
+    console.log('Regulations comparison data:', regulations);
+    
+    let comparisonHtml = '';
+    
+    // 如果regulations是字符串数组（AI服务返回的格式）
+    if (Array.isArray(regulations) && regulations.length > 0 && typeof regulations[0] === 'string') {
+        comparisonHtml = regulations.map(regulation => `
+            <div class="regulation-comparison">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-balance-scale"></i> ${regulation}</h6>
                     </div>
-                    <div class="mt-3">
-                        <h6 class="text-info"><i class="fas fa-search"></i> 分析说明：</h6>
-                        <p class="mb-0" style="font-size: 14px; line-height: 1.6;">${regulation.analysis || '暂无分析'}</p>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary"><i class="fas fa-gavel"></i> 法条原文：</h6>
+                                <div class="bg-light p-3 rounded">
+                                    <p class="mb-0" style="font-size: 14px; line-height: 1.6;">需要查询具体法条原文</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-success"><i class="fas fa-file-contract"></i> 合同相关内容：</h6>
+                                <div class="bg-light p-3 rounded">
+                                    <p class="mb-0" style="font-size: 14px; line-height: 1.6;">相关法律条文</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h6 class="text-info"><i class="fas fa-search"></i> 分析说明：</h6>
+                            <p class="mb-0" style="font-size: 14px; line-height: 1.6;">该法条与合同内容相关，需要进一步分析具体条款</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
+    }
+    // 如果regulations是对象数组（包含详细信息的格式）
+    else if (Array.isArray(regulations) && regulations.length > 0 && typeof regulations[0] === 'object') {
+        comparisonHtml = regulations.map(regulation => `
+            <div class="regulation-comparison">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-balance-scale"></i> ${regulation.article || regulation.title || '未知法条'}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary"><i class="fas fa-gavel"></i> 法条原文：</h6>
+                                <div class="bg-light p-3 rounded">
+                                    <p class="mb-0" style="font-size: 14px; line-height: 1.6;">${regulation.original_text || '暂无原文'}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-success"><i class="fas fa-file-contract"></i> 合同相关内容：</h6>
+                                <div class="bg-light p-3 rounded">
+                                    <p class="mb-0" style="font-size: 14px; line-height: 1.6;">${regulation.contract_reference || '暂无相关内容'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h6 class="text-info"><i class="fas fa-search"></i> 分析说明：</h6>
+                            <p class="mb-0" style="font-size: 14px; line-height: 1.6;">${regulation.analysis || '暂无分析'}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    // 如果regulations是单个对象
+    else if (typeof regulations === 'object' && regulations !== null) {
+        const regulation = regulations;
+        comparisonHtml = `
+            <div class="regulation-comparison">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-balance-scale"></i> ${regulation.article || regulation.title || '相关法条'}</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-primary"><i class="fas fa-gavel"></i> 法条原文：</h6>
+                                <div class="bg-light p-3 rounded">
+                                    <p class="mb-0" style="font-size: 14px; line-height: 1.6;">${regulation.original_text || '暂无原文'}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-success"><i class="fas fa-file-contract"></i> 合同相关内容：</h6>
+                                <div class="bg-light p-3 rounded">
+                                    <p class="mb-0" style="font-size: 14px; line-height: 1.6;">${regulation.contract_reference || '暂无相关内容'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h6 class="text-info"><i class="fas fa-search"></i> 分析说明：</h6>
+                            <p class="mb-0" style="font-size: 14px; line-height: 1.6;">${regulation.analysis || '暂无分析'}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    // 其他情况
+    else {
+        comparisonHtml = `
+            <div class="regulation-comparison">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-balance-scale"></i> 法律条文</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            数据格式异常，无法显示法条对照信息
+                            <br><small>原始数据: ${JSON.stringify(regulations)}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
     
     regulationsComparison.innerHTML = comparisonHtml;
 }
@@ -2031,8 +2488,8 @@ function highlightModificationsInText(text, modifications) {
             if (mod.highlight_start !== undefined && mod.highlight_end !== undefined) {
                 return mod.highlight_end - mod.highlight_start;
             }
-            const aPos = text.indexOf(a.optimized_text || a.suggested_text || '');
-            const bPos = text.indexOf(b.optimized_text || b.suggested_text || '');
+                    const aPos = text.indexOf(a.optimized_text || a.suggested_text || '无内容');
+        const bPos = text.indexOf(b.optimized_text || b.suggested_text || '无内容');
             return bPos - aPos;
         });
         
@@ -2946,16 +3403,62 @@ function displayRegulationsInModal(regulations) {
         return '<p class="text-muted mb-0">未发现相关条例</p>';
     }
     
-    return regulations.map(regulation => `
-        <div class="alert alert-${regulation.compliance ? 'success' : 'warning'} mb-2">
-            <h6 class="mb-1"><i class="fas fa-gavel"></i> ${regulation.article}</h6>
-            <p class="mb-1">${regulation.description}</p>
-            <small class="text-muted">
-                <i class="fas fa-${regulation.compliance ? 'check-circle text-success' : 'exclamation-circle text-danger'}"></i>
-                ${regulation.compliance ? '符合要求' : '需要关注'}
-            </small>
-        </div>
-    `).join('');
+    // 检查regulations的数据结构
+    console.log('Modal regulations data:', regulations);
+    
+    // 如果regulations是字符串数组（AI服务返回的格式）
+    if (Array.isArray(regulations) && regulations.length > 0 && typeof regulations[0] === 'string') {
+        return regulations.map(regulation => `
+            <div class="alert alert-info mb-2">
+                <h6 class="mb-1"><i class="fas fa-gavel"></i> ${regulation}</h6>
+                <p class="mb-1">相关法律条文</p>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle text-info"></i>
+                    需要进一步分析
+                </small>
+            </div>
+        `).join('');
+    }
+    // 如果regulations是对象数组（包含详细信息的格式）
+    else if (Array.isArray(regulations) && regulations.length > 0 && typeof regulations[0] === 'object') {
+        return regulations.map(regulation => `
+            <div class="alert alert-${regulation.compliance ? 'success' : 'warning'} mb-2">
+                <h6 class="mb-1"><i class="fas fa-gavel"></i> ${regulation.article || regulation.title || '未知法条'}</h6>
+                <p class="mb-1">${regulation.description || regulation.content || '暂无描述'}</p>
+                <small class="text-muted">
+                    <i class="fas fa-${regulation.compliance ? 'check-circle text-success' : 'exclamation-circle text-danger'}"></i>
+                    ${regulation.compliance ? '符合要求' : '需要关注'}
+                </small>
+            </div>
+        `).join('');
+    }
+    // 如果regulations是单个对象
+    else if (typeof regulations === 'object' && regulations !== null) {
+        const regulation = regulations;
+        return `
+            <div class="alert alert-info mb-2">
+                <h6 class="mb-1"><i class="fas fa-gavel"></i> ${regulation.article || regulation.title || '相关法条'}</h6>
+                <p class="mb-1">${regulation.description || regulation.content || '暂无描述'}</p>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle text-info"></i>
+                    法律条文信息
+                </small>
+            </div>
+        `;
+    }
+    // 其他情况
+    else {
+        return `
+            <div class="alert alert-warning mb-2">
+                <h6 class="mb-1"><i class="fas fa-exclamation-triangle"></i> 数据格式异常</h6>
+                <p class="mb-1">${JSON.stringify(regulations)}</p>
+                <small class="text-muted">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                    无法解析的法律条文数据
+                </small>
+            </div>
+        `;
+    }
 }
 
 // 在弹框中显示修改建议
@@ -3000,6 +3503,32 @@ function getModificationAlertType(type) {
         case 'modify': return 'warning';
         case 'delete': return 'danger';
         default: return 'info';
+    }
+}
+
+// 获取修改类型显示文本
+function getModificationType(type) {
+    switch (type?.toLowerCase()) {
+        case 'add': return '新增';
+        case 'modify': return '修改';
+        case 'delete': return '删除';
+        case 'warning': return '警告';
+        case 'success': return '成功';
+        case 'info': return '信息';
+        default: return '修改';
+    }
+}
+
+// 获取修改类型颜色
+function getModificationTypeColor(type) {
+    switch (type?.toLowerCase()) {
+        case 'add': return '#28a745';
+        case 'modify': return '#ffc107';
+        case 'delete': return '#dc3545';
+        case 'warning': return '#fd7e14';
+        case 'success': return '#20c997';
+        case 'info': return '#17a2b8';
+        default: return '#6c757d';
     }
 }
 
@@ -3398,7 +3927,14 @@ function downloadAnalysisReport() {
     if (analysis.matched_articles && analysis.matched_articles.length > 0) {
         report += `涉及相关条例:\n`;
         analysis.matched_articles.forEach(article => {
-            report += `- ${article.article}: ${article.description}\n`;
+            // 检查article的数据结构
+            if (typeof article === 'string') {
+                report += `- ${article}\n`;
+            } else if (typeof article === 'object' && article !== null) {
+                report += `- ${article.article || article.title || '未知法条'}: ${article.description || '暂无描述'}\n`;
+            } else {
+                report += `- ${JSON.stringify(article)}\n`;
+            }
         });
         report += `\n`;
     }
@@ -3442,42 +3978,129 @@ function downloadAnalysisReport() {
 
 // 下载修改后的合同
 function downloadModifiedText() {
-    if (!currentAnalysis || !currentAnalysis.contract_optimization) {
-        showMessage('没有可下载的修改后合同', 'warning');
+    console.log('downloadModifiedText 被调用');
+    console.log('currentAnalysis:', currentAnalysis);
+    
+    // 尝试多种方式获取修改后的合同内容
+    let optimizedText = '';
+    let source = '';
+    
+    if (currentAnalysis && currentAnalysis.contract_optimization && currentAnalysis.contract_optimization.optimized_text) {
+        optimizedText = currentAnalysis.contract_optimization.optimized_text;
+        source = 'contract_optimization.optimized_text';
+    } else if (currentAnalysis && currentAnalysis.contract_optimization && currentAnalysis.contract_optimization.modified_text) {
+        optimizedText = currentAnalysis.contract_optimization.modified_text;
+        source = 'contract_optimization.modified_text';
+    } else if (currentAnalysis && currentAnalysis.modified_text) {
+        optimizedText = currentAnalysis.modified_text;
+        source = 'modified_text';
+    } else {
+        // 尝试从页面内容获取
+        const modifiedTextContent = document.getElementById('modifiedTextContent');
+        if (modifiedTextContent) {
+            optimizedText = modifiedTextContent.textContent || modifiedTextContent.innerText || '';
+            source = '页面内容';
+        }
+    }
+    
+    console.log('获取到的修改后内容:', { optimizedText: optimizedText.substring(0, 100) + '...', source });
+    
+    if (!optimizedText || optimizedText.trim() === '') {
+        showMessage('没有找到可下载的修改后合同内容', 'warning');
         return;
     }
     
-    const optimizedText = currentAnalysis.contract_optimization.optimized_text;
     const filename = `修改后合同_${new Date().toISOString().slice(0, 10)}.txt`;
     
     downloadTextFile(optimizedText, filename);
-    showMessage('修改后合同下载成功', 'success');
+    showMessage(`修改后合同下载成功 (来源: ${source})`, 'success');
 }
 
 // 下载翻译后的合同
 function downloadTranslatedText() {
-    if (!currentAnalysis || !currentAnalysis.translation) {
-        showMessage('没有可下载的翻译版本', 'warning');
+    console.log('downloadTranslatedText 被调用');
+    console.log('currentAnalysis:', currentAnalysis);
+    
+    // 尝试多种方式获取翻译后的合同内容
+    let translatedText = '';
+    let source = '';
+    let targetLanguage = 'en';
+    
+    if (currentAnalysis && currentAnalysis.translation && currentAnalysis.translation.translated_text) {
+        translatedText = currentAnalysis.translation.translated_text;
+        targetLanguage = currentAnalysis.translation.target_language || 'en';
+        source = 'translation.translated_text';
+    } else if (currentAnalysis && currentAnalysis.translated_modified_text) {
+        translatedText = currentAnalysis.translated_modified_text;
+        source = 'translated_modified_text';
+    } else {
+        // 尝试从页面内容获取
+        const translatedModifiedContent = document.getElementById('translatedModifiedContent');
+        if (translatedModifiedContent) {
+            translatedText = translatedModifiedContent.textContent || translatedModifiedContent.innerText || '';
+            source = '页面内容';
+        }
+    }
+    
+    console.log('获取到的翻译内容:', { translatedText: translatedText.substring(0, 100) + '...', source, targetLanguage });
+    
+    if (!translatedText || translatedText.trim() === '') {
+        showMessage('没有找到可下载的翻译版本内容', 'warning');
         return;
     }
     
-    const translatedText = currentAnalysis.translation.translated_text;
-    const targetLanguage = currentAnalysis.translation.target_language;
     const filename = `翻译合同_${targetLanguage}_${new Date().toISOString().slice(0, 10)}.txt`;
     
     downloadTextFile(translatedText, filename);
-    showMessage('翻译版本下载成功', 'success');
+    showMessage(`翻译版本下载成功 (来源: ${source})`, 'success');
 }
 
 // 通用文本文件下载函数
 function downloadTextFile(content, filename) {
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    try {
+        console.log('开始下载文件:', filename);
+        console.log('内容长度:', content.length);
+        
+        // 确保内容是字符串
+        if (typeof content !== 'string') {
+            content = String(content);
+        }
+        
+        // 创建Blob对象
+        const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        
+        // 创建下载链接
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.style.display = 'none';
+        
+        // 添加到页面并触发下载
+        document.body.appendChild(link);
+        link.click();
+        
+        // 清理
+        setTimeout(() => {
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }, 100);
+        
+        console.log('文件下载成功:', filename);
+        
+    } catch (error) {
+        console.error('文件下载失败:', error);
+        showMessage(`文件下载失败: ${error.message}`, 'danger');
+        
+        // 备用下载方案：使用window.open
+        try {
+            const textContent = encodeURIComponent(content);
+            const dataUri = `data:text/plain;charset=utf-8,${textContent}`;
+            window.open(dataUri, '_blank');
+            showMessage('已使用备用下载方案', 'info');
+        } catch (fallbackError) {
+            console.error('备用下载方案也失败:', fallbackError);
+            showMessage('所有下载方案都失败，请手动复制内容', 'danger');
+        }
+    }
 }

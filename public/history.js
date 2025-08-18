@@ -551,20 +551,72 @@ function displayRegulationsInModal(articles) {
         return '<p class="text-muted mb-0">暂无相关条例</p>';
     }
     
-    return articles.map(article => `
-        <div class="regulation-item ${article.compliance ? 'compliant' : 'non-compliant'}">
-            <h6 class="mb-2">
-                <i class="fas fa-gavel me-2"></i>
-                ${article.article || '未知条例'}
-                <span class="badge bg-${article.compliance ? 'success' : 'danger'} ms-2">
-                    ${article.compliance ? '合规' : '不合规'}
-                </span>
-            </h6>
-            <p class="mb-2"><strong>描述：</strong>${article.description || '暂无描述'}</p>
-            <p class="mb-2"><strong>分析：</strong>${article.analysis || '暂无分析'}</p>
-            <p class="mb-0"><strong>合同引用：</strong>${article.contract_reference || '无'}</p>
-        </div>
-    `).join('');
+    // 检查articles的数据结构
+    console.log('History modal articles data:', articles);
+    
+    // 如果articles是字符串数组（AI服务返回的格式）
+    if (Array.isArray(articles) && articles.length > 0 && typeof articles[0] === 'string') {
+        return articles.map(article => `
+            <div class="regulation-item">
+                <h6 class="mb-2">
+                    <i class="fas fa-gavel me-2"></i>
+                    ${article}
+                    <span class="badge bg-info ms-2">相关法条</span>
+                </h6>
+                <p class="mb-2"><strong>描述：</strong>相关法律条文</p>
+                <p class="mb-2"><strong>分析：</strong>需要进一步分析具体条款</p>
+                <p class="mb-0"><strong>合同引用：</strong>该法条与合同内容相关</p>
+            </div>
+        `).join('');
+    }
+    // 如果articles是对象数组（包含详细信息的格式）
+    else if (Array.isArray(articles) && articles.length > 0 && typeof articles[0] === 'object') {
+        return articles.map(article => `
+            <div class="regulation-item ${article.compliance ? 'compliant' : 'non-compliant'}">
+                <h6 class="mb-2">
+                    <i class="fas fa-gavel me-2"></i>
+                    ${article.article || article.title || '未知条例'}
+                    <span class="badge bg-${article.compliance ? 'success' : 'danger'} ms-2">
+                        ${article.compliance ? '合规' : '不合规'}
+                    </span>
+                </h6>
+                <p class="mb-2"><strong>描述：</strong>${article.description || article.content || '暂无描述'}</p>
+                <p class="mb-2"><strong>分析：</strong>${article.analysis || '暂无分析'}</p>
+                <p class="mb-0"><strong>合同引用：</strong>${article.contract_reference || '无'}</p>
+            </div>
+        `).join('');
+    }
+    // 如果articles是单个对象
+    else if (typeof articles === 'object' && articles !== null) {
+        const article = articles;
+        return `
+            <div class="regulation-item">
+                <h6 class="mb-2">
+                    <i class="fas fa-gavel me-2"></i>
+                    ${article.article || article.title || '相关条例'}
+                    <span class="badge bg-info ms-2">法律条文</span>
+                </h6>
+                <p class="mb-2"><strong>描述：</strong>${article.description || article.content || '暂无描述'}</p>
+                <p class="mb-2"><strong>分析：</strong>${article.analysis || '暂无分析'}</p>
+                <p class="mb-0"><strong>合同引用：</strong>${article.contract_reference || '无'}</p>
+            </div>
+        `;
+    }
+    // 其他情况
+    else {
+        return `
+            <div class="regulation-item">
+                <h6 class="mb-2">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    数据格式异常
+                    <span class="badge bg-warning ms-2">异常</span>
+                </h6>
+                <p class="mb-2"><strong>描述：</strong>无法解析的法律条文数据</p>
+                <p class="mb-2"><strong>分析：</strong>数据格式问题</p>
+                <p class="mb-0"><strong>原始数据：</strong>${JSON.stringify(articles)}</p>
+            </div>
+        `;
+    }
 }
 
 // 获取评分徽章颜色

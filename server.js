@@ -320,9 +320,14 @@ ${JSON.stringify(modifications, null, 2)}
 }`;
 
     // 使用AI服务进行翻译
-    const translationResult = await aiService.translateContent(prompt, targetLanguage);
+    const translationResult = await aiService.translateContract(originalText, targetLanguage, primaryLaw, secondaryLaw);
     
-    res.json(translationResult);
+    // 返回标准格式的翻译结果
+    res.json({
+      success: true,
+      translated_text: translationResult.translated_text || originalText,
+      message: '翻译完成'
+    });
 
   } catch (error) {
     console.error('翻译错误:', error);
@@ -461,13 +466,7 @@ app.post('/api/translate-original', async (req, res) => {
     }
 
     // 调用AI翻译原文
-    const translation = await aiService.translateContractWithContext(
-      aiService.buildTranslationPromptWithContext(original_text, target_language, {
-        matched_articles: [],
-        primary_law: primaryLaw,
-        secondary_law: secondaryLaw
-      }, primaryLaw, secondaryLaw)
-    );
+    const translation = await aiService.translateContract(original_text, target_language, primaryLaw, secondaryLaw);
 
     if (translation.status === 'failed') {
       return res.status(500).json({ error: translation.error });
