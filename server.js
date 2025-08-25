@@ -459,7 +459,7 @@ startServer();
 // 翻译原文API
 app.post('/api/translate-original', async (req, res) => {
   try {
-    const { original_text, target_language, primaryLaw, secondaryLaw } = req.body;
+    const { original_text, target_language, primaryLaw, secondaryLaw, contract_id } = req.body;
     
     if (!original_text) {
       return res.status(400).json({ error: '缺少原文内容' });
@@ -472,6 +472,21 @@ app.post('/api/translate-original', async (req, res) => {
       return res.status(500).json({ error: translation.error });
     }
 
+    // 如果有contract_id，保存翻译结果到数据库
+    if (contract_id) {
+      try {
+        await saveTranslationToDatabase(contract_id, {
+          target_language: target_language || 'en',
+          translated_text: translation.translated_text,
+          translated_modifications: []
+        });
+        console.log('翻译结果已保存到数据库，合同ID:', contract_id);
+      } catch (saveError) {
+        console.error('保存翻译结果到数据库失败:', saveError);
+        // 即使保存失败，也不影响翻译结果的返回
+      }
+    }
+
     res.json({
       success: true,
       translated_text: translation.translated_text,
@@ -480,6 +495,205 @@ app.post('/api/translate-original', async (req, res) => {
 
   } catch (error) {
     console.error('翻译原文失败:', error);
+    res.status(500).json({ error: error.message });
+  }
+}); 
+
+// 保存翻译结果到数据库
+async function saveTranslationToDatabase(contractId, translationData) {
+  try {
+    // 检查数据库连接
+    if (!await checkDbConnection()) {
+      throw new Error('数据库连接失败');
+    }
+
+    // 获取分析结果ID
+    const [analysisRows] = await db.execute(
+      'SELECT id FROM analysis_results WHERE contract_id = ?',
+      [contractId]
+    );
+
+    if (analysisRows.length === 0) {
+      throw new Error('未找到对应的分析结果');
+    }
+
+    const analysisId = analysisRows[0].id;
+
+    // 检查是否已存在翻译记录
+    const [existingRows] = await db.execute(
+      'SELECT id FROM contract_translations WHERE analysis_id = ?',
+      [analysisId]
+    );
+
+    if (existingRows.length > 0) {
+      // 更新现有翻译记录
+      await db.execute(
+        `UPDATE contract_translations SET 
+         target_language = ?, 
+         language_name = ?, 
+         translated_text = ?, 
+         translated_modifications = ?,
+         updated_at = NOW()
+         WHERE analysis_id = ?`,
+        [
+          translationData.target_language,
+          getLanguageDisplayName(translationData.target_language),
+          translationData.translated_text,
+          JSON.stringify(translationData.translated_modifications || []),
+          analysisId
+        ]
+      );
+      console.log('翻译记录已更新');
+    } else {
+      // 插入新的翻译记录
+      const transId = require('crypto').randomUUID();
+      await db.execute(
+        `INSERT INTO contract_translations (
+          id, analysis_id, target_language, language_name, translated_text, translated_modifications
+        ) VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          transId,
+          analysisId,
+          translationData.target_language,
+          getLanguageDisplayName(translationData.target_language),
+          translationData.translated_text,
+          JSON.stringify(translationData.translated_modifications || [])
+        ]
+      );
+      console.log('翻译记录已插入');
+    }
+
+    // 同时更新analysis_results表中的translation字段
+    await db.execute(
+      `UPDATE analysis_results SET 
+       translation = ? 
+       WHERE id = ?`,
+      [JSON.stringify(translationData), analysisId]
+    );
+
+    return true;
+  } catch (error) {
+    console.error('保存翻译结果到数据库失败:', error);
+    throw error;
+  }
+}
+
+// 获取语言显示名称
+function getLanguageDisplayName(langCode) {
+  const languageNames = {
+    'en': '英语',
+    'ja': '日语',
+    'ko': '韩语',
+    'de': '德语',
+    'fr': '法语',
+    'es': '西班牙语',
+    'ru': '俄语'
+  };
+  return languageNames[langCode] || langCode;
+}
+
+// 保存翻译结果API端点
+app.post('/api/save-translation', async (req, res) => {
+  try {
+    const { contract_id, translation } = req.body;
+    
+    if (!contract_id || !translation) {
+      return res.status(400).json({ error: '缺少必要参数' });
+    }
+
+    // 保存翻译结果到数据库
+    await saveTranslationToDatabase(contract_id, translation);
+    
+    res.json({
+      success: true,
+      message: '翻译结果保存成功'
+    });
+
+  } catch (error) {
+    console.error('保存翻译结果失败:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// 下载合同文件API端点
+app.get('/api/download/:contractId', async (req, res) => {
+  try {
+    const { contractId } = req.params;
+    const { language } = req.query;
+    
+    console.log('下载请求:', { contractId, language });
+    
+    if (!contractId) {
+      return res.status(400).json({ error: '缺少合同ID' });
+    }
+    
+    // 检查数据库连接
+    if (!await checkDbConnection()) {
+      return res.status(500).json({ error: '数据库连接失败' });
+    }
+    
+    // 获取合同基础信息
+    const [contractRows] = await db.execute(
+      'SELECT * FROM contracts WHERE id = ?',
+      [contractId]
+    );
+    
+    if (contractRows.length === 0) {
+      return res.status(404).json({ error: '合同不存在' });
+    }
+    
+    const contract = contractRows[0];
+    
+    // 获取分析结果
+    const [analysisRows] = await db.execute(
+      'SELECT * FROM analysis_results WHERE contract_id = ?',
+      [contractId]
+    );
+    
+    let content = '';
+    let filename = '';
+    
+    if (language === 'zh') {
+      // 中文版本：使用优化后的合同文本，如果没有则使用原文
+      content = analysisRows.length > 0 && analysisRows[0].optimized_text 
+        ? analysisRows[0].optimized_text 
+        : contract.content;
+      filename = `合同_中文_${contract.original_name || '未知文件'}`;
+    } else {
+      // 其他语言版本：查找对应的翻译
+      if (analysisRows.length > 0) {
+        const analysisId = analysisRows[0].id;
+        const [translationRows] = await db.execute(
+          'SELECT * FROM contract_translations WHERE analysis_id = ? AND target_language = ?',
+          [analysisId, language]
+        );
+        
+        if (translationRows.length > 0) {
+          content = translationRows[0].translated_text;
+          filename = `合同_${getLanguageDisplayName(language)}_${contract.original_name || '未知文件'}`;
+        } else {
+          // 如果没有找到翻译，返回原文
+          content = contract.content;
+          filename = `合同_原文_${contract.original_name || '未知文件'}`;
+        }
+      } else {
+        // 如果没有分析结果，返回原文
+        content = contract.content;
+        filename = `合同_原文_${contract.original_name || '未知文件'}`;
+      }
+    }
+    
+    // 设置响应头
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}.txt"`);
+    
+    // 发送文件内容
+    res.send(content);
+    
+    console.log('下载成功:', filename);
+    
+  } catch (error) {
+    console.error('下载合同失败:', error);
     res.status(500).json({ error: error.message });
   }
 }); 

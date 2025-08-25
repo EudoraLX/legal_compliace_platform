@@ -304,24 +304,48 @@ async function getContractHistory() {
     const contractIds = contractRows.map(row => row.id);
     const [analysisRows] = await db.execute(`
       SELECT 
-        contract_id,
-        compliance_score,
-        risk_level,
-        analysis_summary,
-        modifications,
-        translation
-      FROM analysis_results 
-      WHERE contract_id IN (${contractIds.map(() => '?').join(',')})
+        ar.contract_id,
+        ar.id as analysis_id,
+        ar.compliance_score,
+        ar.risk_level,
+        ar.analysis_summary,
+        ar.modifications,
+        ar.translation
+      FROM analysis_results ar
+      WHERE ar.contract_id IN (${contractIds.map(() => '?').join(',')})
     `, contractIds);
+    
+    // 获取所有分析结果的ID，用于查询修改建议
+    const analysisIds = analysisRows.map(row => row.analysis_id).filter(id => id);
+    
+    // 批量查询修改建议数量
+    let modificationCounts = {};
+    if (analysisIds.length > 0) {
+      try {
+        const [modificationRows] = await db.execute(`
+          SELECT analysis_id, COUNT(*) as count
+          FROM contract_modifications 
+          WHERE analysis_id IN (${analysisIds.map(() => '?').join(',')})
+          GROUP BY analysis_id
+        `, analysisIds);
+        
+        modificationRows.forEach(row => {
+          modificationCounts[row.analysis_id] = row.count;
+        });
+      } catch (modError) {
+        console.warn('获取修改建议数量失败:', modError.message);
+      }
+    }
     
     // 构建分析结果映射
     const analysisMap = {};
     analysisRows.forEach(row => {
+      const realModificationCount = modificationCounts[row.analysis_id] || 0;
       analysisMap[row.contract_id] = {
         compliance_score: row.compliance_score,
         risk_level: row.risk_level,
         analysis_summary: row.analysis_summary,
-        modifications: row.modifications || [],
+        modifications: Array(realModificationCount).fill({}), // 创建正确数量的占位符
         translation: row.translation || {}
       };
     });
@@ -387,6 +411,39 @@ async function getContractById(id) {
     
     // 构建analysis_results结构
     if (contract.analysis_id) {
+      // 从contract_modifications表获取真实的修改建议数据
+      let realModifications = [];
+      try {
+        const [modificationRows] = await db.execute(
+          'SELECT * FROM contract_modifications WHERE analysis_id = ? ORDER BY sort_order',
+          [contract.analysis_id]
+        );
+        realModifications = modificationRows;
+        console.log('getContractById: 从contract_modifications表获取到修改建议数量:', realModifications.length);
+      } catch (modError) {
+        console.warn('getContractById: 获取修改建议失败，使用默认值:', modError.message);
+        realModifications = contract.modifications || [];
+      }
+      
+      // 从contract_translations表获取真实的翻译数据
+      let realTranslation = {};
+      try {
+        const [translationRows] = await db.execute(
+          'SELECT * FROM contract_translations WHERE analysis_id = ? LIMIT 1',
+          [contract.analysis_id]
+        );
+        if (translationRows.length > 0) {
+          realTranslation = translationRows[0];
+          console.log('getContractById: 从contract_translations表获取到翻译数据');
+        } else {
+          realTranslation = contract.translation || {};
+          console.log('getContractById: 未找到翻译数据，使用默认值');
+        }
+      } catch (transError) {
+        console.warn('getContractById: 获取翻译数据失败，使用默认值:', transError.message);
+        realTranslation = contract.translation || {};
+      }
+      
       contract.analysis_results = {
         id: contract.analysis_id,
         compliance_score: contract.compliance_score,
@@ -396,9 +453,9 @@ async function getContractById(id) {
         suggestions: contract.suggestions || [],
         matched_articles: contract.matched_articles || [],
         optimized_text: contract.optimized_text,
-        modifications: contract.modifications || [],
+        modifications: realModifications, // 使用真实的修改建议数据
         optimization_summary: contract.optimization_summary,
-        translation: contract.translation || {},
+        translation: realTranslation, // 使用真实的翻译数据
         analyzed_at: contract.analyzed_at
       };
       

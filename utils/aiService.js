@@ -287,12 +287,36 @@ class AIService {
     // 合并法律分析结果
     if (result.steps.legal_analysis.status === 'completed') {
       const legalData = result.steps.legal_analysis.data;
-      finalResult.compliance_score = legalData.compliance_score;
-      finalResult.risk_level = legalData.risk_level;
-      finalResult.risk_factors = legalData.risk_factors;
-      finalResult.suggestions = legalData.suggestions;
-      finalResult.matched_articles = legalData.matched_articles;
-      finalResult.analysis_summary = legalData.analysis_summary;
+      
+      // 确保分数是有效的数字
+      let score = 0;
+      if (legalData.compliance_score !== undefined && legalData.compliance_score !== null) {
+        if (typeof legalData.compliance_score === 'string') {
+          score = parseFloat(legalData.compliance_score) || 0;
+        } else if (typeof legalData.compliance_score === 'number') {
+          score = legalData.compliance_score;
+        }
+      }
+      
+      // 如果分数仍然为0，尝试从其他字段计算
+      if (score === 0 && legalData.matched_articles && legalData.matched_articles.length > 0) {
+        // 基于匹配的法条数量计算基础分数
+        const totalArticles = legalData.matched_articles.length;
+        const compliantArticles = legalData.matched_articles.filter(article => 
+          article.compliance === true || article.compliance === 'true'
+        ).length;
+        
+        if (totalArticles > 0) {
+          score = Math.round((compliantArticles / totalArticles) * 100);
+        }
+      }
+      
+      finalResult.compliance_score = Math.max(0, Math.min(100, score));
+      finalResult.risk_level = legalData.risk_level || this.calculateRiskLevel(score);
+      finalResult.risk_factors = legalData.risk_factors || [];
+      finalResult.suggestions = legalData.suggestions || [];
+      finalResult.matched_articles = legalData.matched_articles || [];
+      finalResult.analysis_summary = legalData.analysis_summary || "法律分析完成";
     }
 
     // 合并合同优化结果
@@ -481,9 +505,32 @@ ${text}
         console.log('AI服务解析的法律分析结果:', parsed);
         console.log('matched_articles:', parsed.matched_articles);
         
+        // 确保分数是有效的数字
+        let score = 0;
+        if (parsed.compliance_score !== undefined && parsed.compliance_score !== null) {
+          if (typeof parsed.compliance_score === 'string') {
+            score = parseFloat(parsed.compliance_score) || 0;
+          } else if (typeof parsed.compliance_score === 'number') {
+            score = parsed.compliance_score;
+          }
+        }
+        
+        // 如果分数仍然为0，尝试从其他字段计算
+        if (score === 0 && parsed.matched_articles && parsed.matched_articles.length > 0) {
+          // 基于匹配的法条数量计算基础分数
+          const totalArticles = parsed.matched_articles.length;
+          const compliantArticles = parsed.matched_articles.filter(article => 
+            article.compliance === true || article.compliance === 'true'
+          ).length;
+          
+          if (totalArticles > 0) {
+            score = Math.round((compliantArticles / totalArticles) * 100);
+          }
+        }
+        
         return {
-          compliance_score: Math.max(0, Math.min(100, parseInt(parsed.compliance_score) || 0)),
-          risk_level: this.calculateRiskLevel(parsed.compliance_score || 0),
+          compliance_score: Math.max(0, Math.min(100, score)),
+          risk_level: this.calculateRiskLevel(score),
           risk_factors: parsed.risk_factors || [],
           suggestions: parsed.suggestions || [],
           matched_articles: parsed.matched_articles || [],
